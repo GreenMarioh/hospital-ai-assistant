@@ -65,15 +65,15 @@ async def seed(db: AsyncSession) -> None:
         roles[name] = role
 
     depts: dict[str, Department] = {}
-    for name, desc in DEPARTMENTS.items():
-        dept = (
-            await db.execute(select(Department).where(Department.name == name))
+    for dept_name, desc in DEPARTMENTS.items():
+        found = (
+            await db.execute(select(Department).where(Department.name == dept_name))
         ).scalar_one_or_none()
-        if dept is None:
-            dept = Department(name=name, description=desc)
-            db.add(dept)
+        if found is None:
+            found = Department(name=dept_name, description=desc)
+            db.add(found)
             await db.flush()
-        depts[name] = dept
+        depts[dept_name] = found
 
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@hospital.local")
     admin_password = os.environ.get("ADMIN_PASSWORD", "ChangeMe!12345")
@@ -82,14 +82,14 @@ async def seed(db: AsyncSession) -> None:
     demo_pw = os.environ.get("DEMO_PASSWORD", "DemoPass!12345")
     if get_settings().environment != "prod":
         await _get_or_create_user(db, "staff@hospital.local", "Front Desk", roles["staff"], demo_pw)
-        for i, (name, dept, spec) in enumerate(DOCTORS):
+        for i, (name, dept_key, spec) in enumerate(DOCTORS):
             email = f"doctor{i + 1}@hospital.local"
             user = await _get_or_create_user(db, email, f"Dr. {name}", roles["doctor"], demo_pw)
             doc = (
                 await db.execute(select(Doctor).where(Doctor.user_id == user.id))
             ).scalar_one_or_none()
             if doc is None:
-                doc = Doctor(user_id=user.id, department_id=depts[dept].id, specialization=spec)
+                doc = Doctor(user_id=user.id, department_id=depts[dept_key].id, specialization=spec)
                 db.add(doc)
                 await db.flush()
                 for weekday in range(5):
