@@ -197,16 +197,17 @@ async def timeline(
             )
             for v in visits
         ]
-        sums = (
-            await db.execute(select(AISummary).where(AISummary.patient_id == patient_id))
-        ).scalars()
-        events += [
-            TimelineEvent(
-                kind="ai_summary",
-                id=s.id,
-                at=s.created_at,
-                title="AI summary (requires clinician review)",
-            )
-            for s in sums
-        ]
+        if role == "doctor":  # AI summaries are clinician-facing: never shown to the patient
+            sums = (
+                await db.execute(select(AISummary).where(AISummary.patient_id == patient_id))
+            ).scalars()
+            events += [
+                TimelineEvent(
+                    kind="ai_summary",
+                    id=s.id,
+                    at=s.created_at,
+                    title="AI summary (requires clinician review)",
+                )
+                for s in sums
+            ]
     return sorted(events, key=lambda e: e.at, reverse=True)

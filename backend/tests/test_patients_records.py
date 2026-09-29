@@ -243,3 +243,19 @@ async def test_timeline_visibility_by_role(client):
         ).json()
     }
     assert kinds_doc == {"appointment", "visit"} and kinds_staff == {"appointment"}
+
+
+async def test_ai_summaries_hidden_from_patient_timeline(client):
+    from app.models import AISummary
+
+    _, p1 = await link_doctor_patient(D1, P1)
+    async with SessionLocal() as db:
+        db.add(AISummary(patient_id=p1.id, kind="briefing", content={"summary": "x"}))
+        await db.commit()
+    hd, hp = await login_headers(client, D1), await login_headers(client, P1)
+    assert "ai_summary" in {
+        e["kind"] for e in (await client.get(f"/api/patients/{p1.id}/timeline", headers=hd)).json()
+    }
+    assert "ai_summary" not in {
+        e["kind"] for e in (await client.get(f"/api/patients/{p1.id}/timeline", headers=hp)).json()
+    }

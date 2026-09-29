@@ -16,12 +16,11 @@ _UUID = re.compile(r"^[0-9a-fA-F-]{36}$")
 
 
 def _parse_resource(path: str) -> tuple[str, str | None]:
+    """'/api/patients/<id>/visits' -> ('patients/visits', '<id>'): names of path segments, first id."""
     parts = [p for p in path.split("/") if p][1:]  # drop leading "api"
-    resource = parts[0] if parts else "unknown"
-    resource_id = next((p for p in parts[1:] if _UUID.match(p)), None)
-    if len(parts) > 1 and not _UUID.match(parts[1]):
-        resource = f"{parts[0]}/{parts[1]}"
-    return resource, resource_id
+    names = [p for p in parts if not _UUID.match(p)][:3]
+    resource_id = next((p for p in parts if _UUID.match(p)), None)
+    return "/".join(names) or "unknown", resource_id
 
 
 class AuditMiddleware(BaseHTTPMiddleware):

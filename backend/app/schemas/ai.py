@@ -89,6 +89,9 @@ class BriefingLLMOutput(BaseModel):
 
 
 class BriefingOut(BriefingLLMOutput):
+    key_history: list[str]
+    recent_visits: list[str]
+    flags: list[str]
     id: uuid.UUID
     kind: str
     ai_generated: bool

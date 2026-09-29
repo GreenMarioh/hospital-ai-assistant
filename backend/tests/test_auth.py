@@ -185,3 +185,15 @@ async def test_admin_creates_users(client, unique_email):
     assert (
         await client.post("/api/auth/login", json={"email": email, "password": "Str0ng!Password1"})
     ).status_code == 401
+
+
+def test_audit_resource_parsing():
+    from app.core.audit import _parse_resource
+
+    pid = "6f1c1c0e-0000-4000-8000-000000000001"
+    assert _parse_resource("/api/patients") == ("patients", None)
+    assert _parse_resource(f"/api/patients/{pid}") == ("patients", pid)
+    assert _parse_resource(f"/api/patients/{pid}/visits") == ("patients/visits", pid)
+    assert _parse_resource("/api/admin/users") == ("admin/users", None)
+    assert _parse_resource(f"/api/visits/{pid}/prescriptions") == ("visits/prescriptions", pid)
+    assert _parse_resource("/api/auth/login") == ("auth/login", None)

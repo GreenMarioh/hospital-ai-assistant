@@ -14,6 +14,7 @@ from app.models import (
     Department,
     Doctor,
     DoctorAvailability,
+    Patient,
     User,
     WaitlistEntry,
 )
@@ -81,6 +82,16 @@ async def doctors(
         stmt = stmt.where(Doctor.department_id == department_id)
     rows = (await db.execute(stmt)).scalars().all()
     return sorted([await _doctor_out(db, d) for d in rows], key=lambda d: d.name)
+
+
+@router.get("/doctors/me", response_model=DoctorOut)
+async def my_doctor_profile(
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_roles("doctor"))
+) -> DoctorOut:
+    doctor = await get_doctor_for_user(db, user)
+    if doctor is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Doctor profile not found")
+    return await _doctor_out(db, doctor)
 
 
 @router.get("/doctors/{doctor_id}/slots", response_model=list[SlotOut])
@@ -266,7 +277,7 @@ async def list_appointments(
     status_filter: str | None = Query(default=None, alias="status"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[Appointment]:
+) -> list[AppointmentOut]:
     stmt = select(Appointment).order_by(Appointment.starts_at)
     role = user.role.name
     if role == "patient":
@@ -291,7 +302,33 @@ async def list_appointments(
             Appointment.starts_at
             < datetime.combine(date_to + timedelta(days=1), datetime.min.time(), tzinfo=tz)
         )
-    return list((await db.execute(stmt.limit(500))).scalars())
+    appts = list((await db.execute(stmt.limit(500))).scalars())
+    return await _with_names(db, appts)
+
+
+async def _with_names(db: AsyncSession, appts: list[Appointment]) -> list[AppointmentOut]:
+    """Attach display names (patients for staff/doctors, doctors for everyone)."""
+    pids = {a.patient_id for a in appts}
+    dids = {a.doctor_id for a in appts}
+    patients: dict[uuid.UUID, str] = {}
+    doctors_: dict[uuid.UUID, str] = {}
+    if pids:
+        rows = await db.execute(select(Patient).where(Patient.id.in_(pids)))
+        patients = {p.id: f"{p.first_name} {p.last_name}" for p in rows.scalars()}
+    if dids:
+        name_rows = await db.execute(
+            select(Doctor.id, User.full_name)
+            .join(User, User.id == Doctor.user_id)
+            .where(Doctor.id.in_(dids))
+        )
+        for row in name_rows.all():
+            doctors_[row[0]] = row[1]
+    out = []
+    for a in appts:
+        o = AppointmentOut.model_validate(a)
+        o.patient_name, o.doctor_name = patients.get(a.patient_id), doctors_.get(a.doctor_id)
+        out.append(o)
+    return out
 
 
 async def _authorized_appt(

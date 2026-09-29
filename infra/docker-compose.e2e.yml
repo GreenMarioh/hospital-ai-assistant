@@ -1,0 +1,7 @@
+# Overrides for automated E2E runs: no auth rate limiting (tests log in many times), AI unconfigured
+# so the graceful-degradation paths are exercised deterministically.
+services:
+  backend:
+    environment:
+      RATE_LIMIT_ENABLED: "false"
+      ANTHROPIC_API_KEY: ""

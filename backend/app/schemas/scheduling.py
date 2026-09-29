@@ -82,6 +82,8 @@ class AppointmentOut(BaseModel):
     ends_at: datetime
     status: str
     reason: str | None
+    patient_name: str | None = None
+    doctor_name: str | None = None
 
 
 class WaitlistIn(BaseModel):
