@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password, verify_password
+from app.core.security import hash_password, hash_password_async, verify_password_async
 from app.core.tokens import (
     REFRESH_TTL,
     RESET_TTL,
@@ -40,12 +40,12 @@ async def issue_tokens(db: AsyncSession, user: User) -> dict[str, str]:
 async def authenticate(db: AsyncSession, email: str, password: str) -> User:
     user = (await db.execute(select(User).where(User.email == email.lower()))).scalar_one_or_none()
     if user is None:
-        verify_password(password, _DUMMY_HASH)
+        await verify_password_async(password, _DUMMY_HASH)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
     now = datetime.now(UTC)
     if user.locked_until and user.locked_until > now:
         raise HTTPException(status.HTTP_423_LOCKED, "Account temporarily locked")
-    if not user.is_active or not verify_password(password, user.password_hash):
+    if not user.is_active or not await verify_password_async(password, user.password_hash):
         user.failed_attempts += 1
         if user.failed_attempts >= MAX_FAILED:
             user.locked_until = now + LOCK_FOR
@@ -119,7 +119,7 @@ async def consume_reset_token(db: AsyncSession, raw: str, new_password: str) -> 
     if token is None or token.used_at is not None or token.expires_at < datetime.now(UTC):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid or expired reset token")
     user = (await db.execute(select(User).where(User.id == token.user_id))).scalar_one()
-    user.password_hash = hash_password(new_password)
+    user.password_hash = await hash_password_async(new_password)
     user.failed_attempts = 0
     user.locked_until = None
     token.used_at = datetime.now(UTC)

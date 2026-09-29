@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.core.deps import get_current_user
 from app.core.ratelimit import AUTH_LIMIT, limiter
-from app.core.security import hash_password
+from app.core.security import hash_password_async
 from app.models import Patient, User
 from app.schemas.auth import (
     ForgotPasswordRequest,
@@ -37,7 +37,7 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
     role = await svc.get_role(db, "patient")
     user = User(
         email=email,
-        password_hash=hash_password(body.password),
+        password_hash=await hash_password_async(body.password),
         full_name=f"{body.first_name} {body.last_name}",
         role_id=role.id,
     )

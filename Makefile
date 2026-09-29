@@ -14,3 +14,6 @@ lint: ; cd backend && ruff check . && black --check . && mypy app; cd frontend &
 .PHONY: e2e-up e2e
 e2e-up: ; test -f .env || cp .env.example .env; $(COMPOSE_E2E) up -d --build --wait && $(COMPOSE_E2E) exec -T backend python -m app.seed
 e2e: e2e-up ; cd frontend && npx playwright test
+
+.PHONY: api-docs
+api-docs: ; python3 infra/scripts/gen_api_docs.py && cd frontend && npm run gen:api

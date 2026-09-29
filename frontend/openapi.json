@@ -447,6 +447,109 @@
     }
    }
   },
+  "/api/admin/departments": {
+   "post": {
+    "tags": [
+     "admin"
+    ],
+    "summary": "Create Department",
+    "operationId": "create_department_api_admin_departments_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DepartmentIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DepartmentOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/admin/departments/{department_id}": {
+   "put": {
+    "tags": [
+     "admin"
+    ],
+    "summary": "Update Department",
+    "operationId": "update_department_api_admin_departments__department_id__put",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "department_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Department Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DepartmentIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DepartmentOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/patients": {
    "post": {
     "tags": [
@@ -3802,6 +3905,33 @@
      "proposal_id"
     ],
     "title": "ConfirmIn"
+   },
+   "DepartmentIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 2,
+      "title": "Name"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 1000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "DepartmentIn"
    },
    "DepartmentOut": {
     "properties": {

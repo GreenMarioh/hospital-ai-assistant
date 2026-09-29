@@ -1,0 +1,41 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 12MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	# API and health endpoints go to FastAPI; everything else is the Next.js app.
+	@api path /api/* /healthz /readyz /docs /openapi.json
+	handle @api {
+		reverse_proxy backend:8000 {
+			# ride out a rolling restart instead of returning 502
+			lb_try_duration 15s
+			lb_try_interval 500ms
+			health_uri /healthz
+			health_interval 10s
+		}
+	}
+	handle {
+		reverse_proxy frontend:3000 {
+			lb_try_duration 15s
+			lb_try_interval 500ms
+		}
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+	}
+}

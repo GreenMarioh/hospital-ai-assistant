@@ -197,3 +197,47 @@ def test_audit_resource_parsing():
     assert _parse_resource("/api/admin/users") == ("admin/users", None)
     assert _parse_resource(f"/api/visits/{pid}/prescriptions") == ("visits/prescriptions", pid)
     assert _parse_resource("/api/auth/login") == ("auth/login", None)
+
+
+async def test_audit_ignores_spoofed_forwarded_for_header(client):
+    from sqlalchemy import select as sel
+
+    await client.get("/api/auth/me", headers={"X-Forwarded-For": "6.6.6.6"})
+    async with SessionLocal() as db:
+        ips = {r.ip for r in (await db.execute(sel(AuditLog))).scalars()}
+    assert "6.6.6.6" not in ips
+
+
+async def test_admin_manages_departments(client):
+    h = await login_headers(client, ADMIN[0], ADMIN[1])
+    r = await client.post(
+        "/api/admin/departments", headers=h, json={"name": "Oncology", "description": "Cancer care"}
+    )
+    assert r.status_code == 201
+    did = r.json()["id"]
+    assert (
+        await client.post("/api/admin/departments", headers=h, json={"name": "oncology"})
+    ).status_code == 409
+    assert (
+        await client.put(
+            f"/api/admin/departments/{did}", headers=h, json={"name": "Oncology & Haematology"}
+        )
+    ).json()["name"] == "Oncology & Haematology"
+    assert (
+        await client.put(f"/api/admin/departments/{did}", headers=h, json={"name": "Cardiology"})
+    ).status_code == 409
+    assert (
+        await client.put("/api/admin/departments/99999", headers=h, json={"name": "Nope"})
+    ).status_code == 404
+    assert (
+        await client.post("/api/admin/departments", headers=h, json={"name": "x"})
+    ).status_code == 422
+    hs = await login_headers(client, "staff@hospital.example.com")
+    assert (
+        await client.post("/api/admin/departments", headers=hs, json={"name": "Sneaky"})
+    ).status_code == 403
+    async with SessionLocal() as db:  # keep the seeded department set stable for other tests
+        from app.models import Department
+
+        await db.delete(await db.get(Department, did))
+        await db.commit()

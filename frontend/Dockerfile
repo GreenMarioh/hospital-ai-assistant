@@ -1,7 +1,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --maxsockets=3 --fetch-retries=8 --fetch-retry-mintimeout=3000 --fetch-timeout=180000
 
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -13,12 +13,14 @@ RUN mkdir -p public && npm run build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
-RUN addgroup -S app && adduser -S app -G app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
+# Runtime only executes `node server.js`: drop npm/yarn (and their bundled CVE surface).
+RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /opt/yarn* /usr/local/bin/yarn* \
+    && addgroup -S app && adduser -S app -G app
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/public ./public
 USER app
 EXPOSE 3000
-ENV PORT=3000 HOSTNAME=0.0.0.0
+HEALTHCHECK --interval=15s --timeout=3s --retries=5 CMD wget -qO- http://127.0.0.1:3000/login >/dev/null || exit 1
 CMD ["node", "server.js"]

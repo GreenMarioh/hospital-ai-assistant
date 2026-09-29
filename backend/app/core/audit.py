@@ -3,10 +3,9 @@ import re
 import uuid
 
 import jwt
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.core.db import SessionLocal
+from app.core.db import AuditSessionLocal
 from app.core.tokens import decode_access_token
 from app.models import AuditLog
 
@@ -23,17 +22,37 @@ def _parse_resource(path: str) -> tuple[str, str | None]:
     return "/".join(names) or "unknown", resource_id
 
 
-class AuditMiddleware(BaseHTTPMiddleware):
-    """Records every /api request (user, action, resource, status, IP) in audit_logs."""
+class AuditMiddleware:
+    """Records every /api request (user, action, resource, status, IP) in audit_logs.
 
-    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
-        response = await call_next(request)
-        path = request.url.path
-        if not path.startswith("/api/"):
-            return response
+    Pure ASGI: the row is written after the response has been sent, so it adds no client latency.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        path = scope.get("path", "")
+        if scope["type"] != "http" or not path.startswith("/api/"):
+            await self.app(scope, receive, send)
+            return
+        holder = {"status": 500}
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                holder["status"] = message["status"]
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_wrapper)
+        finally:
+            await self._record(scope, path, holder["status"])
+
+    async def _record(self, scope: Scope, path: str, status_code: int) -> None:
+        headers = {k.decode().lower(): v.decode("latin-1") for k, v in scope["headers"]}
         user_id: uuid.UUID | None = None
         role: str | None = None
-        auth = request.headers.get("authorization", "")
+        auth = headers.get("authorization", "")
         if auth.lower().startswith("bearer "):
             try:
                 payload = decode_access_token(auth[7:])
@@ -41,12 +60,14 @@ class AuditMiddleware(BaseHTTPMiddleware):
             except (jwt.PyJWTError, KeyError, ValueError):
                 pass
         resource, resource_id = _parse_resource(path)
-        action = "auth" if resource.startswith("auth") else _ACTIONS.get(request.method, "read")
-        ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
-            request.client.host if request.client else None
-        )
+        method = scope["method"]
+        action = "auth" if resource.startswith("auth") else _ACTIONS.get(method, "read")
+        client = scope.get("client")
+        # scope["client"] is rewritten by uvicorn from trusted proxy headers only
+        # (--forwarded-allow-ips); reading X-Forwarded-For here would let callers forge the audited IP.
+        ip = client[0] if client else None
         try:
-            async with SessionLocal() as db:
+            async with AuditSessionLocal() as db:
                 db.add(
                     AuditLog(
                         user_id=user_id,
@@ -54,15 +75,14 @@ class AuditMiddleware(BaseHTTPMiddleware):
                         action=action,
                         resource_type=resource,
                         resource_id=resource_id,
-                        method=request.method,
+                        method=method,
                         path=path[:300],
-                        status_code=response.status_code,
+                        status_code=status_code,
                         ip=ip,
-                        request_id=getattr(request.state, "request_id", None),
+                        request_id=scope.get("state", {}).get("request_id"),
                     )
                 )
                 await db.commit()
         except Exception:
             # Never break the user's request, but make the gap visible to operators.
             log.exception("audit log write failed")
-        return response

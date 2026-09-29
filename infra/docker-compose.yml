@@ -21,7 +21,7 @@ services:
     build: ../backend
     env_file: ../.env
     # Dev convenience: apply migrations (as the migrator role) before starting. Production runs them as a separate deploy step.
-    command: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    command: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-1} --no-access-log"]
     depends_on:
       db: { condition: service_healthy }
     volumes:

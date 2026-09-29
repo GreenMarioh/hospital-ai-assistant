@@ -11,6 +11,11 @@ class DepartmentOut(BaseModel):
     description: str | None = None
 
 
+class DepartmentIn(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    description: str | None = Field(default=None, max_length=1000)
+
+
 class DoctorOut(BaseModel):
     id: uuid.UUID
     name: str

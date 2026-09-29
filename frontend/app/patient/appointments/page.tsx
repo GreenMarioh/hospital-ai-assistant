@@ -58,6 +58,41 @@ function Reschedule({ appt, done }: { appt: Schemas["AppointmentOut"]; done: () 
   );
 }
 
+function MyWaitlist() {
+  const list = useAsync(async () => unwrap(await api.GET("/api/waitlist")), []);
+  const doctors = useAsync(async () => unwrap(await api.GET("/api/doctors")), []);
+  const name = (id: string) => doctors.data?.find((d) => d.id === id)?.name ?? "doctor";
+  const active = (list.data ?? []).filter((w) => w.status !== "fulfilled");
+  if (list.loading || active.length === 0) return null;
+  return (
+    <Card title="My waitlist">
+      <ul className="divide-y text-sm">
+        {active.map((w) => (
+          <li key={w.id} className="flex items-center justify-between py-2">
+            <span>
+              {name(w.doctor_id)} · {w.desired_date} ·{" "}
+              {w.status === "notified" ? "a slot opened, book it now" : "waiting"}
+            </span>
+            <Button
+              variant="secondary"
+              onClick={async () => {
+                await api.DELETE("/api/waitlist/{entry_id}", { params: { path: { entry_id: w.id } } });
+                list.reload();
+              }}
+            >
+              Leave
+              <span className="sr-only">
+                {" "}
+                waitlist for {name(w.doctor_id)} on {w.desired_date}
+              </span>
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 export default function MyAppointments() {
   const appts = useAsync(async () => unwrap(await api.GET("/api/appointments")), []);
   const [msg, setMsg] = useState<string | null>(null);
@@ -124,6 +159,7 @@ export default function MyAppointments() {
           </ul>
         )}
       </Card>
+      <MyWaitlist />
     </>
   );
 }

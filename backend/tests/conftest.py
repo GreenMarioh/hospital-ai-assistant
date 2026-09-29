@@ -29,7 +29,7 @@ security._hasher = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
-from app.core.db import SessionLocal, engine
+from app.core.db import SessionLocal, audit_engine, engine
 from app.main import app
 from app.models import Base
 from app.seed import seed
@@ -56,6 +56,7 @@ async def _database():
         await seed(db)
     yield
     await engine.dispose()
+    await audit_engine.dispose()
 
 
 @pytest_asyncio.fixture(autouse=True)

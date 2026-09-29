@@ -1,0 +1,107 @@
+# Production stack. Only Caddy publishes ports (80/443); everything else is on the internal network.
+# Usage (on the server): IMAGE_TAG=<tag> docker compose -f docker-compose.prod.yml --env-file ../.env.prod up -d
+name: hospital-ai
+x-app: &app
+  env_file: ../.env.prod
+  restart: unless-stopped
+  networks: [internal]
+  logging: &logging
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }   # log rotation
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env.prod}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env.prod}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # certificates (auto-issued and auto-renewed by Caddy)
+      - caddy_config:/config
+    depends_on: [backend, frontend]
+    networks: [internal, public]
+    logging: *logging
+
+  db:
+    <<: *app
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_DB_USER: ${APP_DB_USER}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/10-init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    <<: *app
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  migrate:
+    <<: *app
+    image: ghcr.io/${GHCR_OWNER}/hospital-ai-backend:${IMAGE_TAG:?set IMAGE_TAG}
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db: { condition: service_healthy }
+    profiles: [tools]
+
+  backend:
+    <<: *app
+    image: ghcr.io/${GHCR_OWNER}/hospital-ai-backend:${IMAGE_TAG:?set IMAGE_TAG}
+    environment:
+      ENVIRONMENT: prod
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-4}
+      FORWARDED_ALLOW_IPS: "*"     # only Caddy can reach this container (internal network)
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - uploads:/data/uploads
+      - ../knowledge_base:/app/knowledge_base:ro
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/readyz')"]
+      interval: 10s
+      timeout: 4s
+      retries: 6
+      start_period: 20s
+
+  worker:
+    <<: *app
+    image: ghcr.io/${GHCR_OWNER}/hospital-ai-backend:${IMAGE_TAG:?set IMAGE_TAG}
+    command: ["python", "-m", "app.jobs.worker"]
+    environment: { ENVIRONMENT: prod }
+    depends_on:
+      db: { condition: service_healthy }
+
+  frontend:
+    <<: *app
+    image: ghcr.io/${GHCR_OWNER}/hospital-ai-frontend:${IMAGE_TAG:?set IMAGE_TAG}
+    depends_on: [backend]
+
+networks:
+  internal: {}
+  public: {}
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

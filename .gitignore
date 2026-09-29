@@ -16,3 +16,6 @@ test-results/
 uploads/
 *.dump
 *.age
+!.env.prod.example
+loadtest/*.json
+frontend/openapi.json.bak

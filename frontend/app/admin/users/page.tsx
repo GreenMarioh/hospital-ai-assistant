@@ -4,6 +4,54 @@ import { useState } from "react";
 import { Alert, Badge, Button, Card, ErrorState, Field, Select, Spinner, useAsync } from "@/components/ui";
 import { api, errorMessage, unwrap } from "@/lib/api";
 
+function Departments({
+  list,
+  reload,
+}: {
+  list: { id: number; name: string; description?: string | null }[];
+  reload: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  return (
+    <Card title="Departments">
+      {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
+      <ul className="mb-3 divide-y text-sm">
+        {list.map((d) => (
+          <li key={d.id} className="py-1.5">
+            <strong>{d.name}</strong>
+            {d.description ? ` · ${d.description}` : ""}
+          </li>
+        ))}
+      </ul>
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const res = await api.POST("/api/admin/departments", { body: { name, description: desc || null } });
+          if (res.data) {
+            setMsg({ kind: "success", text: `Added ${res.data.name}.` });
+            setName("");
+            setDesc("");
+            reload();
+          } else setMsg({ kind: "error", text: errorMessage(res.error) });
+        }}
+      >
+        <Field
+          label="New department"
+          required
+          minLength={2}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Field label="Description" value={desc} onChange={(e) => setDesc(e.target.value)} />
+        <Button type="submit">Add department</Button>
+      </form>
+    </Card>
+  );
+}
+
 export default function AdminUsers() {
   const users = useAsync(async () => unwrap(await api.GET("/api/admin/users")), []);
   const depts = useAsync(async () => unwrap(await api.GET("/api/departments")), []);
@@ -80,6 +128,7 @@ export default function AdminUsers() {
           </div>
         </form>
       </Card>
+      <Departments list={depts.data ?? []} reload={depts.reload} />
       <Card title="All users">
         {users.loading ? (
           <Spinner />

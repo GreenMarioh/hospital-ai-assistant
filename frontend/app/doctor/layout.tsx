@@ -8,6 +8,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
       nav={[
         { href: "/doctor", label: "My schedule" },
         { href: "/doctor/patients", label: "My patients" },
+        { href: "/doctor/availability", label: "Availability & leave" },
       ]}
     >
       {children}

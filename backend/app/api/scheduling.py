@@ -77,11 +77,26 @@ async def doctors(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
 ) -> list[DoctorOut]:
-    stmt = select(Doctor).where(Doctor.deleted_at.is_(None))
+    stmt = (
+        select(Doctor, User.full_name, Department.name)
+        .join(User, User.id == Doctor.user_id)
+        .join(Department, Department.id == Doctor.department_id)
+        .where(Doctor.deleted_at.is_(None))
+        .order_by(User.full_name)
+    )
     if department_id:
         stmt = stmt.where(Doctor.department_id == department_id)
-    rows = (await db.execute(stmt)).scalars().all()
-    return sorted([await _doctor_out(db, d) for d in rows], key=lambda d: d.name)
+    return [
+        DoctorOut(
+            id=d.id,
+            name=name,
+            department_id=d.department_id,
+            department=dept,
+            specialization=d.specialization,
+            slot_minutes=d.slot_minutes,
+        )
+        for d, name, dept in (await db.execute(stmt)).all()
+    ]
 
 
 @router.get("/doctors/me", response_model=DoctorOut)

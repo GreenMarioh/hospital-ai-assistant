@@ -192,6 +192,40 @@ export interface paths {
         patch: operations["set_active_api_admin_users__user_id__active_patch"];
         trace?: never;
     };
+    "/api/admin/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Department */
+        post: operations["create_department_api_admin_departments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/departments/{department_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Department */
+        put: operations["update_department_api_admin_departments__department_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/patients": {
         parameters: {
             query?: never;
@@ -1122,6 +1156,13 @@ export interface components {
             conversation_id: string;
             /** Proposal Id */
             proposal_id: string;
+        };
+        /** DepartmentIn */
+        DepartmentIn: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
         };
         /** DepartmentOut */
         DepartmentOut: {
@@ -2088,6 +2129,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_department_api_admin_departments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_department_api_admin_departments__department_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                department_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentOut"];
                 };
             };
             /** @description Validation Error */

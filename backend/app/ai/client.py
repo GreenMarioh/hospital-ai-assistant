@@ -139,7 +139,8 @@ class AnthropicLLM:
                 if not _retryable(exc):
                     break
                 if attempt < MAX_ATTEMPTS - 1:
-                    await self.sleep(0.5 * 2**attempt + random.uniform(0, 0.25))
+                    jitter = random.uniform(0, 0.25)  # nosec B311 - retry jitter, not security
+                    await self.sleep(0.5 * 2**attempt + jitter)
                 continue
             latency = (time.perf_counter() - start) * 1000
             self.breaker.success()

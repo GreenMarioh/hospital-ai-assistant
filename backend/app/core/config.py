@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     smtp_password: str = ""
 
     sentry_dsn: str = ""
+    redis_url: str = ""  # shared rate-limit counters across workers; empty = per-process memory
 
     @property
     def cors_origin_list(self) -> list[str]:

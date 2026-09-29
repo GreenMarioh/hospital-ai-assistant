@@ -3,9 +3,45 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChatInput, ChatLog, type ChatMsg } from "@/components/Chat";
-import { Alert, Button, Card, Empty, ErrorState, Select, Spinner, useAsync } from "@/components/ui";
+import { Alert, Button, Card, Empty, ErrorState, Field, Select, Spinner, useAsync } from "@/components/ui";
 import { api, errorMessage, unwrap, type Schemas } from "@/lib/api";
 import { addDays, fmtDateTime, fmtTime, localDate, todayLocal, weekdayLabel } from "@/lib/time";
+
+function Waitlist({ doctorId }: { doctorId: string }) {
+  const [date, setDate] = useState(addDays(todayLocal(), 1));
+  const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  return (
+    <div className="mt-4 rounded border border-slate-300 p-3" role="group" aria-label="Join waitlist">
+      <p className="text-sm font-medium">Preferred day is full? Join the waitlist.</p>
+      <p className="text-xs text-slate-600">We will email or text you if a slot opens on that day.</p>
+      {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
+      <form
+        className="mt-2 flex flex-wrap items-end gap-2"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const res = await api.POST("/api/waitlist", { body: { doctor_id: doctorId, desired_date: date } });
+          setMsg(
+            res.data
+              ? { kind: "success", text: `You are on the waitlist for ${date}.` }
+              : { kind: "error", text: errorMessage(res.error) },
+          );
+        }}
+      >
+        <Field
+          label="Date"
+          type="date"
+          min={todayLocal()}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          required
+        />
+        <Button type="submit" variant="secondary">
+          Join waitlist
+        </Button>
+      </form>
+    </div>
+  );
+}
 
 function ManualBooking() {
   const router = useRouter();

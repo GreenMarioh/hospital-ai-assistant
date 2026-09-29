@@ -4,6 +4,56 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button, Card, Empty, ErrorState, Field, Spinner, useAsync } from "@/components/ui";
 import { api, unwrap } from "@/lib/api";
+import { escapeHighlight } from "@/lib/text";
+
+function RecordSearch() {
+  const [q, setQ] = useState("");
+  const [term, setTerm] = useState("");
+  const hits = useAsync(
+    async () =>
+      term.length < 2 ? [] : unwrap(await api.GET("/api/search/records", { params: { query: { q: term } } })),
+    [term],
+  );
+  return (
+    <Card title="Search my clinical records">
+      <form
+        className="flex items-end gap-2"
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setTerm(q);
+        }}
+      >
+        <Field
+          label="Full-text search (complaints, notes, diagnoses)"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="flex-1"
+        />
+        <Button type="submit">Search records</Button>
+      </form>
+      {term &&
+        (hits.loading ? (
+          <Spinner />
+        ) : hits.error ? (
+          <ErrorState error={hits.error} retry={hits.reload} />
+        ) : (hits.data ?? []).length === 0 ? (
+          <Empty>No matching records.</Empty>
+        ) : (
+          <ul className="mt-3 divide-y text-sm">
+            {hits.data?.map((h) => (
+              <li key={h.visit_id} className="py-2">
+                <span dangerouslySetInnerHTML={{ __html: escapeHighlight(h.snippet) }} />{" "}
+                <Link className="text-blue-800 underline" href={`/doctor/patients/${h.patient_id}`}>
+                  Open chart
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ))}
+    </Card>
+  );
+}
 
 export default function DoctorPatients() {
   const [q, setQ] = useState("");
@@ -58,6 +108,7 @@ export default function DoctorPatients() {
           </ul>
         )}
       </Card>
+      <RecordSearch />
     </>
   );
 }
