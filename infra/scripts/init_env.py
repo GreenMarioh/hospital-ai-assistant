@@ -18,7 +18,7 @@ text = env.read_text()
 def fill(key: str, value: str, placeholder: str) -> None:
     global text
     m = re.search(rf"^{key}=(.*)$", text, re.M)
-    current = (m.group(1).split("#")[0].strip() if m else "")
+    current = m.group(1).strip() if m else ""
     if not m or current in ("", placeholder) or current.startswith("change-me"):
         line = f"{key}={value}"
         text = re.sub(rf"^{key}=.*$", line, text, flags=re.M) if m else text + f"\n{line}\n"

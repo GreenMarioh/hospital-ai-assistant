@@ -1,5 +1,6 @@
 import os
 import uuid
+from pathlib import Path
 
 import asyncpg
 import pytest
@@ -7,13 +8,26 @@ import pytest_asyncio
 from argon2 import PasswordHasher
 from cryptography.fernet import Fernet
 
+
+def _dotenv() -> dict[str, str]:
+    """Credentials of the local docker-compose Postgres (`make up` generates them into ../.env)."""
+    path = Path(__file__).resolve().parents[2] / ".env"
+    out: dict[str, str] = {}
+    if path.exists():
+        for line in path.read_text().splitlines():
+            if "=" in line and not line.lstrip().startswith("#"):
+                k, v = line.split("=", 1)
+                out[k.strip()] = v.strip()
+    return out
+
+
+_env = _dotenv()
+_user = os.environ.get("POSTGRES_USER") or _env.get("POSTGRES_USER", "hospital_migrator")
+_pw = os.environ.get("POSTGRES_PASSWORD") or _env.get("POSTGRES_PASSWORD", "change-me")
+_host = os.environ.get("TEST_DB_HOST", "127.0.0.1:5433")
 TEST_DB = "hospital_test"
-ADMIN_DSN = os.environ.get(
-    "TEST_ADMIN_DSN", "postgresql://hospital_migrator:change-me@127.0.0.1:5433/postgres"
-)
-os.environ["DATABASE_URL"] = (
-    f"postgresql+asyncpg://hospital_migrator:change-me@127.0.0.1:5433/{TEST_DB}"
-)
+ADMIN_DSN = os.environ.get("TEST_ADMIN_DSN", f"postgresql://{_user}:{_pw}@{_host}/postgres")
+os.environ["DATABASE_URL"] = f"postgresql+asyncpg://{_user}:{_pw}@{_host}/{TEST_DB}"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
 os.environ["FIELD_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 os.environ["SECRET_KEY"] = "test-secret-key-test-secret-key-test-secret"

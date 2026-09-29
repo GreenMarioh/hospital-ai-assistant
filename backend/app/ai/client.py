@@ -18,6 +18,7 @@ log = logging.getLogger("app.ai")
 
 REQUEST_TIMEOUT_S = 30.0
 MAX_ATTEMPTS = 3
+EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 
 
 @dataclass
@@ -102,7 +103,7 @@ class AnthropicLLM:
         )
         self.breaker = breaker or CircuitBreaker()
         self.sleep = sleep
-        self.effort = s.anthropic_effort
+        self.effort = s.anthropic_effort if s.anthropic_effort in EFFORTS else ""
 
     async def complete(
         self,
