@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-5-5"
+    anthropic_effort: str = ""  # optional: low|medium|high|xhigh|max; empty omits the parameter
     ai_enabled: bool = True
 
     storage_backend: str = "local"
