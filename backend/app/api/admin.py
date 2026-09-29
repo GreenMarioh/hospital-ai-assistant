@@ -33,7 +33,7 @@ async def create_user(
     if body.role == "doctor" and (
         body.department_id is None or not await db.get(Department, body.department_id)
     ):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Valid department_id required")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Valid department_id required")
     role = await get_role(db, body.role)
     user = User(
         email=email,

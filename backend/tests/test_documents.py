@@ -1,4 +1,3 @@
-import time
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -177,4 +176,3 @@ async def test_local_storage_rejects_traversal(tmp_path):
     with pytest.raises(ValueError):
         await st.get("../../etc/passwd")
     await st.delete("a/b.bin")
-    time.sleep(0)

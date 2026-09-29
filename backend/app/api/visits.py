@@ -58,7 +58,7 @@ async def create_visit(
     if body.appointment_id is not None:
         appt = await db.get(Appointment, body.appointment_id)
         if appt is None or appt.patient_id != patient_id or appt.doctor_id != doctor.id:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Appointment mismatch")
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Appointment mismatch")
     visit = Visit(
         patient_id=patient_id,
         doctor_id=doctor.id,

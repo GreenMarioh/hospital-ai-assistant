@@ -66,14 +66,14 @@ async def upload_document(
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Insufficient permissions")
     await authorize_patient_access(db, user, patient_id)
     if doc_type not in DOC_TYPES:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Unknown document type")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Unknown document type")
     if file.content_type not in ALLOWED:
         raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "Only PDF, PNG, JPEG allowed")
     data = await file.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
         raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File exceeds 10 MB")
     if not data:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Empty file")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Empty file")
     ext, magics = ALLOWED[file.content_type]
     if not data.startswith(magics):
         raise HTTPException(
@@ -82,7 +82,7 @@ async def upload_document(
     threat = scan(data)
     if threat:
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, f"File rejected by scanner: {threat}"
+            status.HTTP_422_UNPROCESSABLE_CONTENT, f"File rejected by scanner: {threat}"
         )
     key = f"{patient_id}/{uuid.uuid4().hex}{ext}"
     await get_storage().put(key, data, file.content_type)
