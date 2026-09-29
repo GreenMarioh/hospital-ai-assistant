@@ -6,3 +6,6 @@
 - **RAG**: Postgres full-text search over `knowledge_base/*.md` (pgvector deferred).
 - **Field encryption**: Fernet with key from env for insurance ID.
 - **Least privilege DB**: `hospital_app` runtime role (DML only); `hospital_migrator` owns schema and runs Alembic.
+- **Clinical data least privilege**: visits, prescriptions and AI summaries are readable only by the patient and by doctors with an appointment/visit relationship; admin and reception staff are excluded. Staff/admin see demographics; staff also upload and view documents. Unauthorized object access returns 404 to avoid leaking existence.
+- **Versioning**: every edit snapshots the previous state into `record_versions` (immutable, with editor id) and bumps `visits.version`.
+- **Documents**: PDF/PNG/JPEG only, 10 MB, magic-byte check, pluggable scanner hook (EICAR built in), downloads via 5-minute signed links; deletes are soft.

@@ -44,3 +44,43 @@ async def authorize_patient_access(db: AsyncSession, user: User, patient_id: uui
     if not allowed or patient is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
     return patient
+
+
+async def get_doctor_for_user(db: AsyncSession, user: User) -> Doctor | None:
+    return (
+        await db.execute(
+            select(Doctor).where(Doctor.user_id == user.id, Doctor.deleted_at.is_(None))
+        )
+    ).scalar_one_or_none()
+
+
+async def get_patient_for_user(db: AsyncSession, user: User) -> Patient | None:
+    return (
+        await db.execute(
+            select(Patient).where(Patient.user_id == user.id, Patient.deleted_at.is_(None))
+        )
+    ).scalar_one_or_none()
+
+
+async def authorize_clinical_access(db: AsyncSession, user: User, patient_id: uuid.UUID) -> Patient:
+    """Clinical data (visits, prescriptions, AI summaries): doctors with a relationship and the
+    patient themself only. Admin and reception staff are deliberately excluded (least privilege)."""
+    if user.role.name not in ("doctor", "patient"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Insufficient permissions")
+    return await authorize_patient_access(db, user, patient_id)
+
+
+async def authorize_visit(
+    db: AsyncSession, user: User, visit_id: uuid.UUID, write: bool = False
+) -> Visit:
+    visit = (
+        await db.execute(select(Visit).where(Visit.id == visit_id, Visit.deleted_at.is_(None)))
+    ).scalar_one_or_none()
+    if visit is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Visit not found")
+    await authorize_clinical_access(db, user, visit.patient_id)
+    if write:
+        doctor = await get_doctor_for_user(db, user)
+        if user.role.name != "doctor" or doctor is None or visit.doctor_id != doctor.id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Only the treating doctor may edit")
+    return visit

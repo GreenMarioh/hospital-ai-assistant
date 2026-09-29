@@ -5,7 +5,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from app.api import admin, auth, health, patients
+from app.api import admin, auth, documents, health, patients, search, visits
 from app.core.audit import AuditMiddleware
 from app.core.config import get_settings
 from app.core.logging import setup_logging
@@ -34,3 +34,6 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(patients.router)
+app.include_router(visits.router)
+app.include_router(documents.router)
+app.include_router(search.router)
