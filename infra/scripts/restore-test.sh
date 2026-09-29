@@ -5,7 +5,7 @@ set -euo pipefail
 FILE=${1:?backup file}; : "${AGE_IDENTITY:?path to age private key}"
 cd "$(dirname "$0")/.."
 set -a; . ../.env.prod; set +a
-COMPOSE="docker compose -f docker-compose.prod.yml --env-file ../.env.prod"
+COMPOSE="docker compose -f docker-compose.prod.yml ${COMPOSE_EXTRA:-} --env-file ../.env.prod"
 TMPDB="restore_test_$(date +%s)"
 sha256sum -c "$FILE.sha256" >/dev/null 2>&1 && echo "checksum ok" || echo "warning: checksum missing/mismatch"
 $COMPOSE exec -T db psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE $TMPDB" >/dev/null

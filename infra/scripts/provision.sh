@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# One-time hardening + Docker setup for a fresh Ubuntu 22.04/24.04 VPS. Run as root:  sudo ./provision.sh
+# NOTE: written from the runbook and reviewed, but not executed against a real VM in this repository's CI.
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "run as root" >&2; exit 1; }
+DEPLOY_USER=${DEPLOY_USER:-deploy}
+
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl ufw fail2ban unattended-upgrades age logrotate git
+
+# Docker Engine + compose plugin (official convenience script)
+command -v docker >/dev/null || curl -fsSL https://get.docker.com | sh
+
+# Non-root deploy user (docker group) with the SSH key that GitHub Actions uses
+id "$DEPLOY_USER" >/dev/null 2>&1 || adduser --disabled-password --gecos "" "$DEPLOY_USER"
+usermod -aG docker "$DEPLOY_USER"
+install -d -m 700 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "/home/$DEPLOY_USER/.ssh"
+touch "/home/$DEPLOY_USER/.ssh/authorized_keys" && chmod 600 "/home/$DEPLOY_USER/.ssh/authorized_keys"
+chown "$DEPLOY_USER:$DEPLOY_USER" "/home/$DEPLOY_USER/.ssh/authorized_keys"
+install -d -m 750 -o "$DEPLOY_USER" -g "$DEPLOY_USER" /opt/hospital /var/backups/hospital
+
+# Firewall: only SSH, HTTP (ACME + redirect) and HTTPS
+ufw default deny incoming && ufw default allow outgoing
+ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443/tcp
+ufw --force enable
+
+# SSH hardening: keys only, no root login
+sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/; s/^#\?PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+systemctl reload ssh || systemctl reload sshd
+
+systemctl enable --now fail2ban unattended-upgrades
+
+# Docker log rotation defaults (compose also sets per-service limits)
+cat > /etc/docker/daemon.json <<'JSON'
+{ "log-driver": "json-file", "log-opts": { "max-size": "10m", "max-file": "5" } }
+JSON
+systemctl restart docker
+
+# Daily encrypted backup at 02:17 UTC + rotation of its log
+cat > /etc/cron.d/hospital-backup <<CRON
+17 2 * * * $DEPLOY_USER /opt/hospital/infra/scripts/backup.sh >> /var/log/hospital-backup.log 2>&1
+CRON
+cat > /etc/logrotate.d/hospital-backup <<'LR'
+/var/log/hospital-backup.log { weekly rotate 8 compress missingok notifempty }
+LR
+touch /var/log/hospital-backup.log && chown "$DEPLOY_USER" /var/log/hospital-backup.log
+
+echo "Provisioned. Next: add the CI public key to /home/$DEPLOY_USER/.ssh/authorized_keys, clone the repo to /opt/hospital,"
+echo "create /opt/hospital/.env.prod (chmod 600) from .env.prod.example, point DNS A/AAAA records at this host, then deploy."

@@ -1,0 +1,5 @@
+# Local rehearsal of the production stack (see docs/RUNBOOK.md "Rehearse locally"):
+# unprivileged ports, Caddy's internal CA for `localhost`, images built locally.
+services:
+  caddy:
+    ports: !override ["8080:80", "8443:443"]

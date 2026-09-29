@@ -19,3 +19,6 @@ uploads/
 !.env.prod.example
 loadtest/*.json
 frontend/openapi.json.bak
+infra/.deployed_tag
+frontend/playwright-report/
+frontend/test-results/

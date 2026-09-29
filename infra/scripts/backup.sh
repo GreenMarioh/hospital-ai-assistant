@@ -8,7 +8,7 @@ set -a; . ../.env.prod; set +a
 DIR=${BACKUP_DIR:-/var/backups/hospital}; KEEP=${BACKUP_KEEP_DAYS:-14}
 mkdir -p "$DIR"; umask 077
 OUT="$DIR/hospital-$(date -u +%Y%m%dT%H%M%SZ).dump.age"
-COMPOSE="docker compose -f docker-compose.prod.yml --env-file ../.env.prod"
+COMPOSE="docker compose -f docker-compose.prod.yml ${COMPOSE_EXTRA:-} --env-file ../.env.prod"
 # custom-format dump, encrypted on the fly: plaintext never touches disk
 $COMPOSE exec -T db pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc | age -r "$BACKUP_AGE_RECIPIENT" -o "$OUT"
 [ -s "$OUT" ] || { echo "backup empty" >&2; rm -f "$OUT"; exit 1; }
