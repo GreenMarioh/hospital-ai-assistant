@@ -75,15 +75,17 @@ async def seed(db: AsyncSession) -> None:
             await db.flush()
         depts[dept_name] = found
 
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@hospital.local")
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@hospital.example.com")
     admin_password = os.environ.get("ADMIN_PASSWORD", "ChangeMe!12345")
     await _get_or_create_user(db, admin_email, "System Admin", roles["admin"], admin_password)
 
     demo_pw = os.environ.get("DEMO_PASSWORD", "DemoPass!12345")
     if get_settings().environment != "prod":
-        await _get_or_create_user(db, "staff@hospital.local", "Front Desk", roles["staff"], demo_pw)
+        await _get_or_create_user(
+            db, "staff@hospital.example.com", "Front Desk", roles["staff"], demo_pw
+        )
         for i, (name, dept_key, spec) in enumerate(DOCTORS):
-            email = f"doctor{i + 1}@hospital.local"
+            email = f"doctor{i + 1}@hospital.example.com"
             user = await _get_or_create_user(db, email, f"Dr. {name}", roles["doctor"], demo_pw)
             doc = (
                 await db.execute(select(Doctor).where(Doctor.user_id == user.id))
@@ -99,7 +101,7 @@ async def seed(db: AsyncSession) -> None:
                         )
                     )
         for i, (first, last, dob, phone, allergies, bg) in enumerate(PATIENTS):
-            email = f"patient{i + 1}@example.test"
+            email = f"patient{i + 1}@example.com"
             user = await _get_or_create_user(
                 db, email, f"{first} {last}", roles["patient"], demo_pw
             )

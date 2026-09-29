@@ -1,0 +1,187 @@
+import pytest
+from sqlalchemy import select
+
+from app.core.db import SessionLocal
+from app.core.ratelimit import limiter
+from app.models import AuditLog
+from tests.conftest import ADMIN, PASSWORD, login_headers
+
+REG = {"password": "Str0ng!Password1", "first_name": "Test", "last_name": "User",
+       "date_of_birth": "1990-01-01"}  # fmt: skip
+
+
+async def test_register_login_me(client, unique_email):
+    email = unique_email()
+    r = await client.post("/api/auth/register", json={**REG, "email": email})
+    assert r.status_code == 201
+    h = {"Authorization": f"Bearer {r.json()['access_token']}"}
+    me = (await client.get("/api/auth/me", headers=h)).json()
+    assert me["role"] == "patient" and me["email"] == email
+    assert (await client.get("/api/patients/me", headers=h)).status_code == 200
+
+
+async def test_register_rejects_weak_password_and_duplicate(client, unique_email):
+    email = unique_email()
+    assert (
+        await client.post("/api/auth/register", json={**REG, "email": email, "password": "short"})
+    ).status_code == 422
+    assert (
+        await client.post("/api/auth/register", json={**REG, "email": email})
+    ).status_code == 201
+    assert (
+        await client.post("/api/auth/register", json={**REG, "email": email})
+    ).status_code == 409
+
+
+async def test_login_wrong_password_and_unknown_user(client):
+    r = await client.post(
+        "/api/auth/login", json={"email": ADMIN[0], "password": "wrong-password-1"}
+    )
+    assert r.status_code == 401
+    r = await client.post(
+        "/api/auth/login", json={"email": "nobody@x.dev", "password": "whatever-123456"}
+    )
+    assert r.status_code == 401
+
+
+async def test_lockout_after_repeated_failures(client):
+    bad = {"email": "staff@hospital.example.com", "password": "wrong-password-1"}
+    for _ in range(5):
+        assert (await client.post("/api/auth/login", json=bad)).status_code == 401
+    good = {"email": "staff@hospital.example.com", "password": PASSWORD}
+    assert (await client.post("/api/auth/login", json=good)).status_code == 423
+
+
+async def test_refresh_rotation_and_reuse_detection(client):
+    tokens = (
+        await client.post("/api/auth/login", json={"email": ADMIN[0], "password": ADMIN[1]})
+    ).json()
+    r1 = await client.post("/api/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    assert r1.status_code == 200
+    # replaying the old token fails and revokes the new one too
+    assert (
+        await client.post("/api/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    ).status_code == 401
+    assert (
+        await client.post("/api/auth/refresh", json={"refresh_token": r1.json()["refresh_token"]})
+    ).status_code == 401
+
+
+async def test_logout_revokes_refresh(client):
+    tokens = (
+        await client.post("/api/auth/login", json={"email": ADMIN[0], "password": ADMIN[1]})
+    ).json()
+    assert (
+        await client.post("/api/auth/logout", json={"refresh_token": tokens["refresh_token"]})
+    ).status_code == 204
+    assert (
+        await client.post("/api/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    ).status_code == 401
+
+
+async def test_password_reset_flow(client, unique_email, caplog):
+    import logging
+
+    email = unique_email()
+    await client.post("/api/auth/register", json={**REG, "email": email})
+    with caplog.at_level(logging.INFO, logger="app.email"):
+        r = await client.post("/api/auth/forgot-password", json={"email": email})
+    assert r.status_code == 202
+    token = [r for r in caplog.records if r.name == "app.email"][-1].body.split(": ")[-1]
+    assert (
+        await client.post(
+            "/api/auth/reset-password", json={"token": token, "new_password": "N3w!Password99"}
+        )
+    ).status_code == 204
+    assert (
+        await client.post(
+            "/api/auth/reset-password", json={"token": token, "new_password": "N3w!Password99"}
+        )
+    ).status_code == 400
+    assert (
+        await client.post("/api/auth/login", json={"email": email, "password": "N3w!Password99"})
+    ).status_code == 200
+    # unknown email gives the same response
+    assert (
+        await client.post("/api/auth/forgot-password", json={"email": "nope@x.dev"})
+    ).status_code == 202
+
+
+async def test_invalid_and_missing_token(client):
+    assert (await client.get("/api/auth/me")).status_code == 401
+    assert (
+        await client.get("/api/auth/me", headers={"Authorization": "Bearer garbage"})
+    ).status_code == 401
+
+
+async def test_rate_limit_on_auth_endpoints(client):
+    limiter.enabled = True
+    limiter.reset()
+    try:
+        codes = [
+            (
+                await client.post(
+                    "/api/auth/login", json={"email": "a@b.dev", "password": "x" * 12}
+                )
+            ).status_code
+            for _ in range(12)
+        ]
+    finally:
+        limiter.enabled = False
+    assert 429 in codes
+
+
+async def test_audit_log_records_access(client):
+    h = await login_headers(client, ADMIN[0], ADMIN[1])
+    await client.get("/api/admin/users", headers=h)
+    async with SessionLocal() as db:
+        rows = (
+            (await db.execute(select(AuditLog).where(AuditLog.resource_type == "admin/users")))
+            .scalars()
+            .all()
+        )
+    assert rows and rows[0].action == "read" and rows[0].role == "admin" and rows[0].user_id
+
+
+@pytest.mark.parametrize(
+    "email", ["staff@hospital.example.com", "doctor1@hospital.example.com", "patient1@example.com"]
+)
+async def test_admin_endpoints_forbidden_for_non_admins(client, email):
+    h = await login_headers(client, email)
+    assert (await client.get("/api/admin/users", headers=h)).status_code == 403
+    body = {"email": "x@y.dev", "password": "Str0ng!Password1", "full_name": "X", "role": "staff"}
+    assert (await client.post("/api/admin/users", json=body, headers=h)).status_code == 403
+
+
+async def test_admin_creates_users(client, unique_email):
+    h = await login_headers(client, ADMIN[0], ADMIN[1])
+    email = unique_email()
+    r = await client.post(
+        "/api/admin/users",
+        headers=h,
+        json={"email": email, "password": "Str0ng!Password1", "full_name": "S", "role": "staff"},
+    )
+    assert r.status_code == 201 and r.json()["role"] == "staff"
+    # doctor requires a department
+    r = await client.post(
+        "/api/admin/users",
+        headers=h,
+        json={
+            "email": unique_email(),
+            "password": "Str0ng!Password1",
+            "full_name": "D",
+            "role": "doctor",
+        },
+    )
+    assert r.status_code == 422
+    # deactivated user cannot use an existing token
+    uid = r.json and (await client.get("/api/admin/users", headers=h)).json()
+    target = next(u for u in uid if u["email"] == email)
+    assert (
+        await client.patch(
+            f"/api/admin/users/{target['id']}/active", params={"active": "false"}, headers=h
+        )
+    ).status_code == 200
+    assert (
+        await client.post("/api/auth/login", json={"email": email, "password": "Str0ng!Password1"})
+    ).status_code == 401
