@@ -26,10 +26,17 @@ await page.screenshot({ path: `${OUT}patient-triage.png` });
 page = await session("doctor1@hospital.example.com", "DemoPass!12345");
 await page.getByRole("link", { name: "My patients" }).click();
 const withHistory = page.getByRole("link", { name: /Open chart for E2E/ });
-await ((await withHistory.count()) > 0 ? withHistory.first() : page.getByRole("link", { name: /Open chart/ }).first()).click();
+await (
+  (await withHistory.count()) > 0
+    ? withHistory.first()
+    : page.getByRole("link", { name: /Open chart/ }).first()
+).click();
 await page.getByRole("button", { name: /Generate briefing|Regenerate/ }).click();
 await page.getByRole("button", { name: "Regenerate briefing" }).waitFor();
-await page.getByText(/Flagged items|AI service unavailable/).first().waitFor();
+await page
+  .getByText(/Flagged items|AI service unavailable/)
+  .first()
+  .waitFor();
 await page.screenshot({ path: `${OUT}doctor-briefing.png`, fullPage: false });
 
 page = await session("admin@hospital.example.com", "ChangeMe!12345");
