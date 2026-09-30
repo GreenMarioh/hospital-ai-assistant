@@ -1,5 +1,5 @@
 # Triage evaluation report
-Generated 2026-09-29 21:06 UTC. Cases: 37 ({'emergency': 15, 'urgent': 8, 'routine': 8, 'self-care': 6}).
+Generated 2026-09-30 00:14 UTC. Cases: 37 ({'emergency': 15, 'urgent': 8, 'routine': 8, 'self-care': 6}).
 
 Caveat: the cases were written by the same team that wrote the rules. The rule results below show the rule set covers these cases, not that it generalises; extend `cases.json` with real, de-identified cases over time.
 

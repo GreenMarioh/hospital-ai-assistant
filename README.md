@@ -58,7 +58,7 @@ make load-test                        # k6, 50 users; see docs/LOADTEST.md
 make api-docs                         # regenerate docs/API.md and the typed frontend client
 python -m app.ai.evals.run [--live]   # triage eval (rules always; LLM needs a key) -> backend/app/ai/evals/REPORT.md
 ```
-Current results: 132 backend tests at 95 % coverage (CI gate 80 %), 18 frontend unit tests, 14 Playwright tests (full role flow + axe WCAG 2.1 AA scans of every main page), 0 npm/pip audit findings, Trivy clean (no fixable HIGH/CRITICAL).
+Current results: 132 backend tests at 95 % coverage (CI gate 80 %), 18 frontend unit tests, 13 Playwright tests (full role flow + axe WCAG 2.1 AA scans of every main page), 0 npm/pip audit findings, Trivy clean (no fixable HIGH/CRITICAL).
 
 ## Documentation
 | Doc | Contents |

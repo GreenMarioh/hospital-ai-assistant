@@ -117,18 +117,15 @@ async def test_invalid_and_missing_token(client):
 async def test_rate_limit_on_auth_endpoints(client):
     limiter.enabled = True
     limiter.reset()
+    body = {"email": "a@b.dev", "password": "x" * 12}
     try:
-        codes = [
-            (
-                await client.post(
-                    "/api/auth/login", json={"email": "a@b.dev", "password": "x" * 12}
-                )
-            ).status_code
-            for _ in range(12)
-        ]
+        responses = [await client.post("/api/auth/login", json=body) for _ in range(12)]
     finally:
         limiter.enabled = False
-    assert 429 in codes
+    limited = [r for r in responses if r.status_code == 429]
+    assert limited
+    assert limited[0].json() == {"detail": "Too many requests. Please wait a minute and try again."}
+    assert limited[0].headers["retry-after"] == "60"
 
 
 async def test_audit_log_records_access(client):

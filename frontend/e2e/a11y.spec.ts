@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { ADMIN, login } from "./helpers";
+import { ADMIN, ensureDoctorHasPatient, login } from "./helpers";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
@@ -36,7 +36,8 @@ test("patient portal pages", async ({ page }) => {
   }
 });
 
-test("reception and doctor pages", async ({ page }) => {
+test("reception and doctor pages", async ({ page, request }) => {
+  await ensureDoctorHasPatient(request);
   await login(page, "staff@hospital.example.com");
   await expect(page.getByRole("heading", { level: 1, name: "Patients", exact: true })).toBeVisible();
   await audit(page, "reception: patients");

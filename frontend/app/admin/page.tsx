@@ -54,7 +54,7 @@ function Kpi({ label, value }: { label: string; value: string | number }) {
 
 export default function AdminDashboard() {
   const [from, setFrom] = useState(addDays(todayLocal(), -29));
-  const [to, setTo] = useState(todayLocal());
+  const [to, setTo] = useState(addDays(todayLocal(), 14)); // include upcoming bookings
   const [err, setErr] = useState<string | null>(null);
   const s = useAsync(
     async () =>
