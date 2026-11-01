@@ -1,0 +1,123 @@
+# Project To-Do
+
+*Last updated: 2026-11-01*
+
+**Where things stand:** the app works end to end as a local demo with all four roles. It has never been deployed, and live AI has never been tested. CI is red for two known reasons (items 1 and 2 below). **Do not use real patient data yet.**
+
+## Get started
+
+You need Docker with Compose v2, `make` and `python3`. Ports 3000, 8000 and 5433 must be free.
+
+```bash
+git clone git@github.com:randomPlayerHere/hospital-ai-assistant.git
+cd hospital-ai-assistant
+make up     # creates .env with random secrets, builds images, starts everything
+make seed   # adds demo users and data
+```
+
+Open http://localhost:3000. The demo logins are in the [README](README.md). No API key is needed: without one, the AI features fall back to their non-AI behaviour.
+
+To run the tests (needs **Python 3.14** and Node 22):
+
+```bash
+make backend-venv                # the database from `make up` must be running
+(cd frontend && npm ci && npx playwright install chromium)
+make test                        # backend + frontend unit tests
+make lint
+make e2e                         # Playwright against the full stack
+```
+
+**Rules that are easy to break:**
+- Don't put inline `# comments` after values in `.env` files. Compose treats them as part of the value.
+- Never commit `.env`, and never put real patient data in code, tests or screenshots.
+- Every new endpoint that touches patient data must use the checks in `backend/app/services/access.py`.
+- Migrations must stay backward compatible with the previous release, because rollback does not reverse the schema.
+- The AI must never diagnose or recommend medication. Emergency red flags are rule-based and run before the LLM (see `docs/DECISIONS.md`).
+
+## CI status
+
+From the first CI run this project has ever had, on 2026-11-01. Earlier results were local only.
+
+| Check | Result | Details |
+|---|---|---|
+| Lint and types | ✅ Pass | ruff, black, mypy, eslint, tsc, prettier |
+| Backend tests | ✅ Pass | 132 passed, 94.6% coverage |
+| Frontend tests | ✅ Pass | 18 unit tests and a production build |
+| Docker image build | ✅ Pass | |
+| E2E (Playwright) | ❌ 12 of 13 pass | Test bug, see item 2 |
+| `pip-audit`, `bandit` | ✅ Pass | |
+| `npm audit` | ❌ Fail | 27 vulnerabilities, see item 1 |
+| Trivy image scan | ⚠️ Not run | Skipped because `npm audit` fails first |
+| Deploy workflow | ⚠️ Never run | Needs a server and secrets, see section D |
+
+## What's done
+
+- [x] **Accounts and security:** register, login, password reset, rotating refresh tokens, lockout, rate limits, server-side permissions for 4 roles (admin, doctor, reception, patient), full audit log
+- [x] **Patients:** create, search, edit, soft delete, encrypted insurance ID, timeline
+- [x] **Scheduling:** doctor availability and leave, free slots, book, reschedule, cancel, no-show, complete, waitlist, reception calendar
+- [x] **Records:** visit notes, prescriptions, edit history, full-text search
+- [x] **Documents:** PDF/PNG/JPEG upload with type and size checks, 5-minute signed download links
+- [x] **AI:** symptom triage with rule-based emergency detection, booking assistant that requires patient confirmation, visit summaries and doctor briefings, FAQ over `knowledge_base/`, safety filter on replies, and fallbacks when the AI is down (tested with a fake AI client only)
+- [x] **Admin:** user and department management, analytics dashboard, CSV export, audit log viewer
+- [x] **Background jobs:** appointment reminders in a separate worker
+- [x] **Frontend:** 20 pages across all roles, with automated accessibility scans (WCAG 2.1 AA)
+- [x] **Ops, tested locally only:** production Compose file, Caddy HTTPS, deploy script with automatic rollback, smoke test, encrypted backup and restore
+- [x] **CI/CD:** CI and deploy workflows (deploy has never run)
+- [x] **Docs:** architecture, API, security, runbook, user guide, demo script, load test (p95 67 ms at 50 users, measured 2026-09-30)
+
+## What's still needed
+
+### A. Fix first (anyone can do these)
+
+- [ ] **1. Fix frontend dependency vulnerabilities. Do this before any deployment.** `npm audit` reports 27: 1 critical (`next`, installed 15.5.26, affected through 15.5.27), 3 high (`vite`, `undici`, `source-map-js`) and 23 moderate.
+  - Run `cd frontend && npm audit fix`, then all tests. A dry run shows this covers the critical and high ones.
+  - Most of the moderate ones come through `eslint`, `eslint-config-next` and `openapi-typescript`, whose fixes are breaking changes, so upgrade those separately. CI only fails on high or critical.
+  - Trivy will run for the first time once this passes, so it may report more. Update `docs/SECURITY.md` with the new results.
+- [ ] **2. Fix the E2E test that fails on weekends.** `frontend/e2e/reception.spec.ts:28-33` jumps 7 days, which lands on another weekend day with no slots, then looks for a "Next week" button. In Day view that button is called "Next day", so the test times out. Doctors only work Monday to Friday, so expect this every Saturday and Sunday. It's a test bug, not an app bug. **Done when** E2E passes on a weekend.
+- [ ] **3. Stop tracking build output.** Add `frontend/tsconfig.tsbuildinfo` and `backend/hospital_ai_backend.egg-info/` to `.gitignore` and run `git rm --cached` on them.
+
+### B. Missing features (anyone can do these)
+
+- [ ] **4. Change password.** `docs/RUNBOOK.md` and `.env.prod.example` tell the admin to change the password right after first login, but there is no endpoint or page for it. The only route is "forgot password", which needs working email. Needed before deployment.
+- [ ] **5. Add screens for backend features that have no UI:**
+  - patient data export: `GET /api/admin/patients/{id}/export`
+  - patient deletion request: `POST /api/admin/patients/{id}/deletion-request`
+  - doctor slot settings: `PUT /api/doctors/{id}/slot-config`
+  - visit edit history: `GET /api/visits/{id}/versions`
+- [ ] **6. Test real email and S3 storage.** The SMTP code (`services/email.py`) and S3 code (`services/storage.py`) have never run in tests. Try them against a real or local service (such as Mailpit or MinIO).
+
+### C. Live AI (needs an Anthropic API key)
+
+- [ ] **7. Run the live evaluation.** Set `ANTHROPIC_API_KEY`, run `python -m app.ai.evals.run --live` from `backend/`, then commit the updated `backend/app/ai/evals/REPORT.md`. LLM accuracy is currently **NOT RUN**, and the AI has only been tested against a fake client.
+- [ ] **8. Get the triage rules checked by a clinician.** The 37 evaluation cases were written alongside the rules, so 100% recall only shows that the rules cover those cases. Add reviewed, de-identified cases.
+
+### D. Deployment (needs the project owner's accounts)
+
+Follow `docs/RUNBOOK.md`, section 1. Do items 1 and 4 first.
+
+- [ ] **9. Get the infrastructure:** a domain and DNS, an Ubuntu server (2 vCPU / 4 GB), SMTP credentials, and an age key for backups.
+- [ ] **10. Set up the server:** `infra/scripts/provision.sh` has **never been run on a real server**, so keep a second SSH session open while it changes SSH settings.
+- [ ] **11. Handle the repo being private** (the runbook doesn't cover this yet, so update it too):
+  - The `curl raw.githubusercontent.com/...` command in section 1 won't work. Copy the script to the server instead.
+  - The server needs a read-only [deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys), both to clone the repo and because `deploy.yml` runs `git fetch` there.
+- [ ] **12. Add the GitHub secrets:** `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `GHCR_READ_TOKEN`. The runbook says to use a `production` environment. If your GitHub plan doesn't offer environment secrets on private repos, add them as repository secrets, which `deploy.yml` reads the same way.
+- [ ] **13. Do the first deploy:** fill in `.env.prod`, seed the admin, create a doctor with availability (the smoke test needs one), then push a `v*` tag. Until the secrets are set, pushing a `v*` tag will fail at the deploy step.
+- [ ] **14. Set up operations:** off-server backups (`BACKUP_S3_URI`), an uptime monitor on `/readyz`, Sentry (`SENTRY_DSN`), and a first restore test. Store `FIELD_ENCRYPTION_KEY` and the age private key safely away from the server, because losing either means losing data.
+
+### E. Before any real patient data
+
+These are the known gaps from `docs/SECURITY.md`. The project is designed around HIPAA-style safeguards but is **not certified as compliant**.
+
+- [ ] **15. Legal and compliance:** a risk assessment, plus a BAA or zero-retention terms with the LLM provider, because it receives symptom text and clinical excerpts. This needs a decision from the project owner.
+- [ ] **16. Multi-factor login.** None exists yet.
+- [ ] **17. Real virus scanning.** `services/scan.py` only detects the EICAR test file, so plug in ClamAV.
+- [ ] **18. Stricter browser security:** replace CSP `unsafe-inline` with nonces, and consider moving the refresh token from `sessionStorage` to an httpOnly cookie.
+- [ ] **19. Tamper-proof audit logs:** they currently sit in the same database as the app, so ship them to write-once storage.
+- [ ] **20. Key rotation:** add tooling to rotate `FIELD_ENCRYPTION_KEY`. Today it would need manual re-encryption.
+- [ ] **21. Data retention:** define the policy and the process for permanent deletion, which is currently a manual database operation.
+- [ ] **22. Edge protection and manual accessibility review:** add a WAF, and test with a keyboard and screen reader, since automated scans only cover part of WCAG.
+
+### F. Nice to have
+
+- [ ] Load test the AI endpoints (excluded so far) and re-run the load test on production-like hardware.
+- [ ] Try `pgvector` for FAQ search, which currently uses Postgres full-text search.

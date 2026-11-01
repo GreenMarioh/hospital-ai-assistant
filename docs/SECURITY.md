@@ -44,6 +44,8 @@ Only via environment / secret manager. `.env` is git-ignored; `.env.example` hol
 The runtime DB role (`hospital_app`) has DML only; the migrator role owns the schema.
 
 ## Security testing results
+Recorded on 2026-09-30. CI on 2026-11-01 found new `npm audit` advisories, including a critical one in Next.js; see `to_Do.md`.
+
 | Check | Result |
 |---|---|
 | `pip-audit` (backend deps) | No known vulnerabilities |

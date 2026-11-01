@@ -22,7 +22,7 @@ Four roles (admin, doctor, reception staff, patient) with server-side RBAC, a fu
 Prerequisites: Docker with the Compose plugin (v2), `make`, `python3` (only used to generate secrets). Ports 3000, 8000 and 5433 must be free.
 
 ```bash
-git clone <this repo> hospital-ai-assistant && cd hospital-ai-assistant
+git clone git@github.com:randomPlayerHere/hospital-ai-assistant.git && cd hospital-ai-assistant
 make up          # creates .env with random secrets, builds images, starts db + api + worker + web, applies migrations
 make seed        # roles, departments, 6 demo doctors with Mon-Fri 09-17 availability, staff, admin, 3 synthetic patients
 ```
@@ -58,11 +58,12 @@ make load-test                        # k6, 50 users; see docs/LOADTEST.md
 make api-docs                         # regenerate docs/API.md and the typed frontend client
 python -m app.ai.evals.run [--live]   # triage eval (rules always; LLM needs a key) -> backend/app/ai/evals/REPORT.md
 ```
-Current results: 132 backend tests at 95 % coverage (CI gate 80 %), 18 frontend unit tests, 13 Playwright tests (full role flow + axe WCAG 2.1 AA scans of every main page), 0 npm/pip audit findings, Trivy clean (no fixable HIGH/CRITICAL).
+Results from local runs on 2026-09-30: 132 backend tests at 95 % coverage (CI gate 80 %), 18 frontend unit tests, 13 Playwright tests (full role flow + axe WCAG 2.1 AA scans of every main page), 0 npm/pip audit findings, Trivy clean (no fixable HIGH/CRITICAL). **New npm advisories have appeared since then; see `to_Do.md` for current CI status.**
 
 ## Documentation
 | Doc | Contents |
 |---|---|
+| `to_Do.md` | **Start here if you're joining the project:** what's done, what's still needed, setup |
 | `docs/USER_GUIDE.md` | What each role can do, step by step |
 | `docs/DEMO.md` | 10-minute demo script |
 | `docs/ARCHITECTURE.md` | System diagram, ER diagram, design points |
