@@ -90,6 +90,7 @@ jobs:
         run: |
           docker load < images.tar.gz
           docker tag hospital-ai-backend:ci hospital-ai-backend:latest
+          docker tag hospital-ai-backend:ci hospital-ai-worker:latest
           docker tag hospital-ai-frontend:ci hospital-ai-frontend:latest
           cp .env.example .env
           KEY=$(python3 -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
