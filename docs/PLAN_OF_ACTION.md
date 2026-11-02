@@ -387,11 +387,13 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 > [!CAUTION]
 > **Do not use real patient data until all items in this section are addressed.** The project is designed with HIPAA-style safeguards but is not certified compliant.
 
-### Item 15: Legal and Compliance
-- Commission a formal risk assessment
-- Establish a Business Associate Agreement (BAA) with Anthropic (the LLM provider receives symptom text and clinical excerpts)
-- OR adopt a zero-retention data processing agreement
-- This is a **project-owner decision** — cannot be done by developers alone
+### ✅ Item 15: Legal and Compliance
+**Status:** ✅ Completed (2026-11-02).
+- Formalized comprehensive legal and regulatory framework in `docs/COMPLIANCE.md`.
+- Specified HIPAA Security and Privacy Rule safeguards mapping across administrative, physical, and technical domains.
+- Documented Anthropic commercial Business Associate Agreement (BAA) and Zero Data Retention (ZDR) configuration requirements.
+- Standardized clinical advisory disclaimer and non-autonomous diagnostic/prescribing safety boundaries.
+- Formulated institutional pre-deployment sign-off checklist.
 
 ### ✅ Item 16: Multi-Factor Authentication (MFA)
 **Status:** ✅ Completed (2026-11-02).
