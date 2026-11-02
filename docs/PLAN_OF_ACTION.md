@@ -82,8 +82,13 @@ flowchart TD
 
 ---
 
-### Item 2: Fix the Weekend E2E Test
-**Status:** ❌ Failing on Saturdays and Sundays.
+### ✅ Item 2: Fix the Weekend E2E Test
+**Status:** ✅ Completed (2026-11-02).
+
+**Resolution:**
+- Switched to Day view first (`page.getByRole("button", { name: "Day" }).click()`).
+- Updated the advance loop to step day-by-day with `page.getByRole("button", { name: "Next day" })` instead of jumping 7 days into another weekend.
+- Added `await expect(slot.or(noSlots)).toBeVisible()` to ensure slot data has loaded before checking visibility.
 
 **Root cause** ([`frontend/e2e/reception.spec.ts:28-33`](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/frontend/e2e/reception.spec.ts#L28-L33)):
 ```typescript

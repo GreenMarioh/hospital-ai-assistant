@@ -44,7 +44,7 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
 | Backend tests | ✅ Pass | 132 passed, 94.6% coverage |
 | Frontend tests | ✅ Pass | 18 unit tests and a production build |
 | Docker image build | ✅ Pass | |
-| E2E (Playwright) | ❌ 12 of 13 pass | Test bug, see item 2 |
+| E2E (Playwright) | ✅ 13 of 13 pass | Fixed weekend day advance in reception.spec.ts |
 | `pip-audit`, `bandit` | ✅ Pass | |
 | `npm audit` | ✅ Pass | 0 vulnerabilities (critical, high, and moderate fixed) |
 | Trivy image scan | ⚠️ Not run | Unblocked now that `npm audit` passes |
@@ -73,7 +73,7 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
   - Run `cd frontend && npm audit fix`, then all tests. A dry run shows this covers the critical and high ones.
   - Most of the moderate ones come through `eslint`, `eslint-config-next` and `openapi-typescript`, whose fixes are breaking changes, so upgrade those separately. CI only fails on high or critical.
   - Trivy will run for the first time once this passes, so it may report more. Update `docs/SECURITY.md` with the new results.
-- [ ] **2. Fix the E2E test that fails on weekends.** `frontend/e2e/reception.spec.ts:28-33` jumps 7 days, which lands on another weekend day with no slots, then looks for a "Next week" button. In Day view that button is called "Next day", so the test times out. Doctors only work Monday to Friday, so expect this every Saturday and Sunday. It's a test bug, not an app bug. **Done when** E2E passes on a weekend.
+- [x] **2. Fix the E2E test that fails on weekends.** `frontend/e2e/reception.spec.ts:28-33` jumps 7 days, which lands on another weekend day with no slots, then looks for a "Next week" button. In Day view that button is called "Next day", so the test times out. Doctors only work Monday to Friday, so expect this every Saturday and Sunday. It's a test bug, not an app bug. **Done when** E2E passes on a weekend.
 - [ ] **3. Stop tracking build output.** Add `frontend/tsconfig.tsbuildinfo` and `backend/hospital_ai_backend.egg-info/` to `.gitignore` and run `git rm --cached` on them.
 
 ### B. Missing features (anyone can do these)
