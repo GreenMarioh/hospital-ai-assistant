@@ -341,17 +341,10 @@ bash infra/scripts/provision.sh <server-ip> <ssh-user>
 > [!CAUTION]
 > This script **modifies SSH settings** on the server. Keep a second SSH session open so you're not locked out if something goes wrong.
 
-### Item 11: Handle Private Repo
-The [RUNBOOK.md](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/docs/RUNBOOK.md) assumes a public repo. For a private repo:
-
-1. **Copy the provision script manually** to the server instead of using `curl raw.githubusercontent.com/...`
-2. **Create a GitHub deploy key** (read-only):
-   ```bash
-   ssh-keygen -t ed25519 -C "deploy@hospital" -f ~/.ssh/hospital_deploy
-   ```
-   Add the public key to GitHub → Repo → Settings → Deploy Keys.
-3. **Configure the server** to use this key for `git fetch` operations
-4. Update `docs/RUNBOOK.md` with these steps
+### ✅ Item 11: Handle Private Repo
+**Status:** ✅ Completed (2026-11-02).
+- Enhanced `infra/scripts/provision.sh` to auto-generate a dedicated ed25519 deploy key for the `deploy` user, populate `known_hosts` with GitHub keys, and output clear instructions for GitHub Deploy Keys registration.
+- Updated `docs/RUNBOOK.md` section 1 with `scp` instructions (avoiding raw GitHub URLs that fail for private repos) and step-by-step deploy key + repository secrets configuration.
 
 ### Item 12: Add GitHub Secrets
 In GitHub → Repo → Settings → Environments → `production` (create if needed):

@@ -97,9 +97,10 @@ Follow `docs/RUNBOOK.md`, section 1. Do items 1 and 4 first.
 
 - [ ] **9. Get the infrastructure:** a domain and DNS, an Ubuntu server (2 vCPU / 4 GB), SMTP credentials, and an age key for backups.
 - [ ] **10. Set up the server:** `infra/scripts/provision.sh` has **never been run on a real server**, so keep a second SSH session open while it changes SSH settings.
-- [ ] **11. Handle the repo being private** (the runbook doesn't cover this yet, so update it too):
-  - The `curl raw.githubusercontent.com/...` command in section 1 won't work. Copy the script to the server instead.
-  - The server needs a read-only [deploy key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys), both to clone the repo and because `deploy.yml` runs `git fetch` there.
+- [x] **11. Handle the repo being private** (the runbook doesn't cover this yet, so update it too):
+  - Replaced raw `curl` with `scp` instructions in `docs/RUNBOOK.md`.
+  - Updated `infra/scripts/provision.sh` to automatically generate dedicated ed25519 deploy keys, add `github.com` to `known_hosts`, and output the public key for GitHub Deploy Keys configuration.
+  - Documented private repo deploy key setup and repository secrets fallback in `docs/RUNBOOK.md`.
 - [ ] **12. Add the GitHub secrets:** `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `GHCR_READ_TOKEN`. The runbook says to use a `production` environment. If your GitHub plan doesn't offer environment secrets on private repos, add them as repository secrets, which `deploy.yml` reads the same way.
 - [ ] **13. Do the first deploy:** fill in `.env.prod`, seed the admin, create a doctor with availability (the smoke test needs one), then push a `v*` tag. Until the secrets are set, pushing a `v*` tag will fail at the deploy step.
 - [ ] **14. Set up operations:** off-server backups (`BACKUP_S3_URI`), an uptime monitor on `/readyz`, Sentry (`SENTRY_DSN`), and a first restore test. Store `FIELD_ENCRYPTION_KEY` and the age private key safely away from the server, because losing either means losing data.
