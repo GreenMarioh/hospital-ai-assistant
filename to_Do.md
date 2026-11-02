@@ -79,11 +79,11 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
 ### B. Missing features (anyone can do these)
 
 - [x] **4. Change password.** `docs/RUNBOOK.md` and `.env.prod.example` tell the admin to change the password right after first login, but there is no endpoint or page for it. The only route is "forgot password", which needs working email. Needed before deployment.
-- [ ] **5. Add screens for backend features that have no UI:**
-  - patient data export: `GET /api/admin/patients/{id}/export`
-  - patient deletion request: `POST /api/admin/patients/{id}/deletion-request`
-  - doctor slot settings: `PUT /api/doctors/{id}/slot-config`
-  - visit edit history: `GET /api/visits/{id}/versions`
+- [x] **5. Add screens for backend features that have no UI:**
+  - [x] patient data export: `GET /api/admin/patients/{id}/export` (added to `/admin/patients` & `/admin/patients/[id]`)
+  - [x] patient deletion request: `POST /api/admin/patients/{id}/deletion-request` (added to `/admin/patients` & `/admin/patients/[id]`)
+  - [x] doctor slot settings: `PUT /api/doctors/{id}/slot-config` (added to `/doctor/availability`)
+  - [x] visit edit history: `GET /api/visits/{id}/versions` (added to `/doctor/patients/[id]`)
 - [ ] **6. Test real email and S3 storage.** The SMTP code (`services/email.py`) and S3 code (`services/storage.py`) have never run in tests. Try them against a real or local service (such as Mailpit or MinIO).
 
 ### C. Live AI (needs an Anthropic API key)

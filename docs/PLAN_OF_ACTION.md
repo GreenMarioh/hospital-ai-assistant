@@ -204,9 +204,11 @@ class ChangePasswordRequest(BaseModel):
 
 ---
 
-### Item 5: Missing UI Screens for Existing Backend Features
-
-Four backend endpoints have no UI. Each needs a page or panel.
+### ✅ Item 5: Missing UI Screens for Existing Backend Features
+**Status:** ✅ Completed (2026-11-02). All 4 screens and integration points implemented and verified:
+- **5a & 5b. Patient Data Export & Deletion Request:** Added to `/admin/patients` list view and `/admin/patients/[id]` detail view, with JSON download trigger and explicit erasure confirmation workflows.
+- **5c. Doctor Slot Configuration:** Added `SlotConfig` component to `frontend/app/doctor/availability/page.tsx` and updated `backend/app/api/scheduling.py` and `backend/tests/test_scheduling.py` so doctors can configure their own slot length.
+- **5d. Visit Edit History:** Added collapsible `VisitVersions` viewer component to each visit item in `frontend/app/doctor/patients/[id]/page.tsx`, displaying version numbers, timestamps, and full snapshot fields.
 
 #### 5a. Patient Data Export
 **Endpoint:** `GET /api/admin/patients/{id}/export`  
