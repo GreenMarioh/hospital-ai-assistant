@@ -425,14 +425,11 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 - Implemented transactional batch decryption and re-encryption for all encrypted patient insurance records with pre-commit roundtrip verification.
 - Added comprehensive unit tests in `backend/tests/test_key_rotation.py` verifying full encryption rotation, decryption with new key, invalidation with old key, and input validation.
 
-### Item 21: Data Retention Policy
-**Current state:** Soft-delete exists; no policy or tooling for permanent deletion.
-
-**Steps:**
-1. Define retention periods (e.g., 7 years for clinical records per jurisdiction)
-2. Write a background job or script to permanently delete soft-deleted patients after the retention period
-3. Define a "deletion request" workflow (endpoint already exists at `POST /api/admin/patients/{id}/deletion-request`)
-4. Document in `docs/SECURITY.md`
+### ✅ Item 21: Data Retention Policy
+**Status:** ✅ Completed (2026-11-02).
+- Formalized data retention policies (7-year clinical hold, 30-day post-erasure cooling period, token cleanup) in `docs/SECURITY.md`.
+- Implemented permanent deletion utility `backend/app/scripts/purge_data.py` supporting dry-run, specific patient ID purge (with cascaded visits, documents, S3/local file cleanup, and user account deletion), aging batch purge, and token cleanup.
+- Added comprehensive automated test suite in `backend/tests/test_data_retention.py`.
 
 ### Item 22: Edge Protection and Manual Accessibility Review
 **Two separate tasks:**

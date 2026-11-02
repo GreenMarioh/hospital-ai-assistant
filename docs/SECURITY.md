@@ -28,19 +28,23 @@ deployment needs a risk assessment, BAAs with vendors (including the LLM provide
 | Log forgery | Audit IP taken from uvicorn's trusted-proxy rewriting, never from a raw `X-Forwarded-For` | Backend must only be reachable through the reverse proxy |
 
 ## Authentication design notes
-- Access token (15 min JWT, HS256) is kept **in memory**; the refresh token lives in `sessionStorage` (per tab, cleared on close). This avoids
-  CSRF but means an XSS bug could steal the refresh token. The CSP and React escaping reduce that risk; the alternative (BFF with httpOnly cookies + CSRF tokens) is a possible future change.
+- Access token (15 min JWT, HS256) is kept **in memory**; the rotating refresh token is stored in a secure, `httpOnly`, `SameSite=Lax` cookie (`Path=/api/auth`). This prevents client-side script theft (XSS mitigation).
+- Multi-Factor Authentication (MFA): Supports RFC 6238 TOTP (Google Authenticator, Authy, 1Password) via `/api/auth/mfa/setup`, `/enable`, `/disable`, and two-step `/verify-login` with signed tickets.
 - Password reset tokens are single-use, hashed at rest, valid 1 hour; the API never reveals whether an email exists. The dev email backend logs the token: **use `EMAIL_BACKEND=smtp` in production.**
 - Deactivating a user invalidates their access on the next request.
 
-## Data lifecycle
-- Clinical tables use `deleted_at` soft deletion; nothing clinical is hard-deleted by the application.
-- Admin-only endpoints: patient data export (`GET /api/admin/patients/{id}/export`) and erasure requests (`POST .../deletion-request`, soft-deletes and disables the portal account; hard deletion after the retention period is a documented manual DB operation).
-- Backups: daily encrypted dumps (see `docs/RUNBOOK.md`); restore is tested by `infra/scripts/restore-test.sh`.
+## Data lifecycle and retention policy
+- **Active clinical records:** Clinical tables use `deleted_at` soft deletion to prevent accidental loss; records are retained for statutory clinical retention periods (typically 7 years).
+- **Patient erasure requests:** Admin-triggered erasure requests (`POST /api/admin/patients/{id}/deletion-request`) soft-delete the patient, de-identify active access, and disable the portal user account.
+- **Permanent purge:** The retention purge utility (`python -m app.scripts.purge_data`) provides automated, permanent deletion of soft-deleted patients older than the retention threshold (e.g. `--purge-soft-deleted-older-than-days 30`), permanently purging associated records, documents in storage, and user credentials.
+- **Credential cleanup:** Expired password reset tokens and stale revoked refresh tokens are cleaned up via `python -m app.scripts.purge_data --purge-expired-tokens`.
+- **Backups:** Daily encrypted dumps using `age` (see `docs/RUNBOOK.md`); restore is verified by `infra/scripts/restore-test.sh`.
 
-## Secrets
-Only via environment / secret manager. `.env` is git-ignored; `.env.example` holds placeholders. Rotate `SECRET_KEY` (invalidates sessions) and
-`FIELD_ENCRYPTION_KEY` (requires re-encrypting `insurance_id_encrypted`; no automated rotation yet).
+## Secrets and Key Rotation
+Only via environment / secret manager. `.env` is git-ignored; `.env.example` holds placeholders. Rotate `SECRET_KEY` (invalidates sessions).
+To rotate `FIELD_ENCRYPTION_KEY`, run the transactional rotation utility:
+`python -m app.scripts.rotate_encryption_key --old-key <old> --new-key <new>`.
+It re-encrypts all patient insurance identifiers in a single atomic transaction with roundtrip verification before commit.
 The runtime DB role (`hospital_app`) has DML only; the migrator role owns the schema.
 
 ## Security testing results

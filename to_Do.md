@@ -115,7 +115,7 @@ These are the known gaps from `docs/SECURITY.md`. The project is designed around
 - [x] **18. Stricter browser security:** Replaced `unsafe-inline` with per-request cryptographic nonces and `strict-dynamic` in `frontend/middleware.ts`; moved refresh tokens to secure `httpOnly` cookies (`Path=/api/auth`, `SameSite=Lax`) across login, register, MFA, refresh, and logout, with automated cookie rotation and revocation tests in `backend/tests/test_auth.py`.
 - [x] **19. Tamper-proof audit logs:** Implemented SHA-256 cryptographic hash-chaining across all `audit_logs` entries (`prev_hash` -> `entry_hash`), added append-only external streaming via `AUDIT_LOG_STREAM_PATH`, created verification CLI `app.scripts.verify_audit_chain`, and added automated tamper-detection test suite in `backend/tests/test_audit_chain.py`.
 - [x] **20. Key rotation:** Implemented CLI key rotation script `app.scripts.rotate_encryption_key` with transactional batch re-encryption, pre-commit decryption verification, and automated tests in `backend/tests/test_key_rotation.py`.
-- [ ] **21. Data retention:** define the policy and the process for permanent deletion, which is currently a manual database operation.
+- [x] **21. Data retention:** Defined data lifecycle policy in `docs/SECURITY.md`, implemented purge CLI `app.scripts.purge_data` (supporting targeted patient purge, aging soft-deleted records, and expired token cleanup), and added automated test suite in `backend/tests/test_data_retention.py`.
 - [ ] **22. Edge protection and manual accessibility review:** add a WAF, and test with a keyboard and screen reader, since automated scans only cover part of WCAG.
 
 ### F. Nice to have
