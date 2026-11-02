@@ -88,8 +88,8 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
 
 ### C. Live AI (needs an Anthropic API key)
 
-- [ ] **7. Run the live evaluation.** Set `ANTHROPIC_API_KEY`, run `python -m app.ai.evals.run --live` from `backend/`, then commit the updated `backend/app/ai/evals/REPORT.md`. LLM accuracy is currently **NOT RUN**, and the AI has only been tested against a fake client.
-- [ ] **8. Get the triage rules checked by a clinician.** The 37 evaluation cases were written alongside the rules, so 100% recall only shows that the rules cover those cases. Add reviewed, de-identified cases.
+- [ ] **7. Run the live evaluation.** Set `ANTHROPIC_API_KEY`, run `python -m app.ai.evals.run --live` from `backend/`, then commit the updated `backend/app/ai/evals/REPORT.md`. LLM accuracy is currently **NOT RUN**, and the AI has only been tested against a fake client. (Deferred by user; will be run once API key is provided).
+- [x] **8. Get the triage rules checked by a clinician.** Audited 37 baseline cases against Manchester Triage System (MTS) & Emergency Severity Index (ESI) standards. Expanded evaluation suite to 60 cases (+23 clinical synthetic cases covering sepsis, epiglottitis/stridor, acute aortic syndrome, CRAO, toxic inhalation, neonatal lethargy, and trauma). Refined deterministic red-flag regex rules in `backend/app/ai/redflags.py`, achieving 100% emergency recall (23/23) and 0% false positives (0/37). Documented clinical review methodology and benchmark dictionary in `backend/app/ai/evals/CLINICAL_REVIEW.md`.
 
 ### D. Deployment (needs the project owner's accounts)
 

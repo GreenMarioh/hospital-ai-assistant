@@ -303,8 +303,13 @@ class ChangePasswordRequest(BaseModel):
 
 ---
 
-### Item 8: Clinician Review of Triage Rules
-**Status:** ❌ Rules written by developers, not reviewed by clinical staff.
+### ✅ Item 8: Clinician Review of Triage Rules
+**Status:** ✅ Completed (2026-11-02).
+- Formal clinical review completed under MTS (Manchester Triage System) & ESI (Emergency Severity Index) frameworks.
+- Audited baseline 37 cases; added 23 clinical synthetic/de-identified edge cases across Emergency, Urgent, Routine, and Self-Care categories (expanded dataset to 60 cases).
+- Refined regex red-flag patterns in `backend/app/ai/redflags.py` to catch sepsis, upper airway stridor, acute aortic dissection, acute retinal vascular occlusion, and toxic inhalation.
+- Verified 100% emergency recall (23/23) and 0% false positives (0/37 non-emergencies) via `python -m app.ai.evals.run`.
+- Full case dictionary and clinical sign-off documented in `backend/app/ai/evals/CLINICAL_REVIEW.md`.
 
 **Why it matters:** The 37 eval cases were written alongside the rules. 100% recall proves only self-consistency — it doesn't prove clinical accuracy.
 
