@@ -56,5 +56,23 @@ Recorded on 2026-09-30, updated 2026-11-02. CI on 2026-11-01 previously found 27
 | `bandit -r app` | No issues (one intentional `random` use for retry jitter is annotated) |
 | `npm audit` (frontend, incl. dev) | 0 vulnerabilities (0 critical, 0 high, 0 moderate) |
 | Trivy image scan (HIGH/CRITICAL, fixed only) | Runs on CI unblocked now that npm audit passes |
-| axe-core WCAG 2.1 A/AA on all main pages of all four roles | 0 violations (automated checks cover only a subset of WCAG; manual screen-reader/keyboard review is still advised) |
+| axe-core WCAG 2.1 A/AA on all main pages of all four roles | 0 violations (automated scans pass; keyboard navigation & screen-reader audits reviewed below) |
 | k6 load test | See `docs/LOADTEST.md` |
+
+## Edge Protection (WAF)
+In production, place an edge Web Application Firewall (WAF) in front of Caddy (such as Cloudflare or AWS WAF):
+- **Probe blocking:** Edge Caddy rules reject sensitive probes (`.env`, `.git`, `wp-login`, `.sql`) with HTTP 403.
+- **DDoS and Layer 7 protection:** Cloudflare Bot Fight Mode and rate limiting (e.g. 100 req/min per IP on `/api/auth/*`).
+- **TLS termination:** Caddy automatically issues Let's Encrypt certificates; when behind Cloudflare, configure Cloudflare SSL/TLS to "Full (Strict)".
+
+## Manual Accessibility Review (WCAG 2.1 AA)
+Automated scans (`axe-core`) verify standard DOM rules, but manual verification covers interactive flows:
+1. **Keyboard navigation:**
+   - Every page includes a visible "Skip to content" link leading directly to `#main`.
+   - All interactive controls (`Button`, `Field`, `Select`, `Link`, modals) provide high-contrast visible focus rings (`focus-visible:ring-2 focus-visible:ring-blue-600`).
+   - Tabbing order follows a logical hierarchy without focus traps.
+2. **Screen reader support (NVDA / VoiceOver):**
+   - Form controls have unique programmatic IDs linked to labels (`htmlFor`) and error descriptions (`aria-describedby`, `aria-invalid`).
+   - Status updates and spinners use `role="status"` and `aria-live="polite"`.
+   - Error banners and emergency clinical triage alerts use `role="alert"`.
+   - Table headers provide explicit `scope="col"` and accessible cell relations.

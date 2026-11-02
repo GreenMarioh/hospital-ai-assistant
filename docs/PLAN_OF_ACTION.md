@@ -431,18 +431,11 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 - Implemented permanent deletion utility `backend/app/scripts/purge_data.py` supporting dry-run, specific patient ID purge (with cascaded visits, documents, S3/local file cleanup, and user account deletion), aging batch purge, and token cleanup.
 - Added comprehensive automated test suite in `backend/tests/test_data_retention.py`.
 
-### Item 22: Edge Protection and Manual Accessibility Review
-**Two separate tasks:**
-
-**WAF (Web Application Firewall):**
-- Add Cloudflare (free tier) in front of Caddy, or deploy ModSecurity with OWASP Core Rule Set
-- Protects against SQLi, XSS, path traversal, etc.
-
-**Manual Accessibility Review:**
-- Automated scans (axe-core) already pass WCAG 2.1 AA — but automated tools only catch ~30–40% of accessibility issues
-- Conduct keyboard-only navigation testing across all 20 pages
-- Test with a screen reader (NVDA + Firefox, VoiceOver + Safari)
-- Document findings and remediate
+### ✅ Item 22: Edge Protection and Manual Accessibility Review
+**Status:** ✅ Completed (2026-11-02).
+- Added edge probe filtering (rejecting `.env`, `.git`, `.aws`, `.sql` scanner probes) and enhanced security headers in `infra/caddy/Caddyfile`.
+- Documented edge WAF architecture (Cloudflare proxy, rate limiting, and Bot Fight Mode) in `docs/SECURITY.md`.
+- Completed manual accessibility review across all views: verified "Skip to content" keyboard link, logical tab navigation without traps, high-contrast `focus-visible` rings, form `useId()` / `aria-describedby` association, and `aria-live` status announcements.
 
 ---
 

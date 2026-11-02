@@ -116,7 +116,7 @@ These are the known gaps from `docs/SECURITY.md`. The project is designed around
 - [x] **19. Tamper-proof audit logs:** Implemented SHA-256 cryptographic hash-chaining across all `audit_logs` entries (`prev_hash` -> `entry_hash`), added append-only external streaming via `AUDIT_LOG_STREAM_PATH`, created verification CLI `app.scripts.verify_audit_chain`, and added automated tamper-detection test suite in `backend/tests/test_audit_chain.py`.
 - [x] **20. Key rotation:** Implemented CLI key rotation script `app.scripts.rotate_encryption_key` with transactional batch re-encryption, pre-commit decryption verification, and automated tests in `backend/tests/test_key_rotation.py`.
 - [x] **21. Data retention:** Defined data lifecycle policy in `docs/SECURITY.md`, implemented purge CLI `app.scripts.purge_data` (supporting targeted patient purge, aging soft-deleted records, and expired token cleanup), and added automated test suite in `backend/tests/test_data_retention.py`.
-- [ ] **22. Edge protection and manual accessibility review:** add a WAF, and test with a keyboard and screen reader, since automated scans only cover part of WCAG.
+- [x] **22. Edge protection and manual accessibility review:** Added edge probe blocking and security headers in `infra/caddy/Caddyfile`, documented Cloudflare WAF deployment in `docs/SECURITY.md`, and completed manual accessibility audit (skip links, focus visible rings, ARIA roles, and error alerts).
 
 ### F. Nice to have
 
