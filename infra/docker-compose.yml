@@ -59,7 +59,8 @@ services:
     restart: unless-stopped
 
   minio:
-    image: minio/minio:latest
+    image: alpine/minio:latest-release
+    user: "0:0"
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
