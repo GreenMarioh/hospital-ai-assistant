@@ -123,8 +123,8 @@ for (let i = 0; i < 10; i++) {
 
 ---
 
-### Item 3: Stop Tracking Build Output
-**Status:** ❌ Build artifacts in git.
+### ✅ Item 3: Stop Tracking Build Output
+**Status:** ✅ Completed (2026-11-02). Removed `frontend/tsconfig.tsbuildinfo` and `backend/hospital_ai_backend.egg-info/` from git cache and added entries to `.gitignore`.
 
 **Steps:**
 1. Add to [`.gitignore`](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/.gitignore):
