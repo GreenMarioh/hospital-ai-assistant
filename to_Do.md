@@ -84,7 +84,7 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
   - [x] patient deletion request: `POST /api/admin/patients/{id}/deletion-request` (added to `/admin/patients` & `/admin/patients/[id]`)
   - [x] doctor slot settings: `PUT /api/doctors/{id}/slot-config` (added to `/doctor/availability`)
   - [x] visit edit history: `GET /api/visits/{id}/versions` (added to `/doctor/patients/[id]`)
-- [ ] **6. Test real email and S3 storage.** The SMTP code (`services/email.py`) and S3 code (`services/storage.py`) have never run in tests. Try them against a real or local service (such as Mailpit or MinIO).
+- [x] **6. Test real email and S3 storage.** Added Mailpit and MinIO to dev compose and CI; implemented resilient STARTTLS / SMTPS in `services/email.py` and S3 region / NoSuchKey handling in `services/storage.py`; added comprehensive test suites in `backend/tests/test_email_smtp.py` and `backend/tests/test_storage_s3.py` (in-process RFC 5321 SMTP, password-reset email delivery, Mailpit API checks, botocore S3 Stubber, and MinIO live roundtrip).
 
 ### C. Live AI (needs an Anthropic API key)
 

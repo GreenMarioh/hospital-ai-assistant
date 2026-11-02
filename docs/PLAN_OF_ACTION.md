@@ -247,8 +247,13 @@ class ChangePasswordRequest(BaseModel):
 
 ---
 
-### Item 6: Test Real Email and S3 Storage
-**Status:** ❌ SMTP and S3 code written but never exercised in tests.
+### ✅ Item 6: Test Real Email and S3 Storage
+**Status:** ✅ Completed (2026-11-02).
+- Added `mailpit` and `minio` services to `infra/docker-compose.yml` and added Mailpit service to CI (`.github/workflows/ci.yml`).
+- Enhanced `backend/app/services/email.py` with safe `has_extn("starttls")` negotiation and SMTPS (port 465) support.
+- Enhanced `backend/app/services/storage.py` with `s3_region` configuration and consistent `NoSuchKey` -> `FileNotFoundError` mapping.
+- Added comprehensive SMTP test suite in `backend/tests/test_email_smtp.py` covering console logging, in-process RFC 5321 server testing (plain delivery, AUTH PLAIN/LOGIN, STARTTLS advertisement), live Mailpit API integration, and end-to-end `POST /api/auth/forgot-password` email dispatch.
+- Added comprehensive S3 test suite in `backend/tests/test_storage_s3.py` covering `botocore.stub.Stubber` unit tests (put, get, delete, ServerSideEncryption AES256, NoSuchKey mapping), `get_storage()` caching/switching, live MinIO bucket roundtrip, and FastAPI Document API integration with S3 backend.
 
 #### Email (SMTP)
 **Current state:** [`backend/app/services/email.py`](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/backend/app/services/email.py) has console and SMTP backends. Console mode is tested; SMTP is not.

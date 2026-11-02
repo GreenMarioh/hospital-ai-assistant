@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     s3_endpoint_url: str = ""
     s3_access_key: str = ""
     s3_secret_key: str = ""
+    s3_region: str = "us-east-1"
 
     email_backend: str = "console"
     smtp_host: str = ""
