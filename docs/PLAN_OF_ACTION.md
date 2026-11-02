@@ -419,14 +419,11 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 - Added CLI verification tool `backend/app/scripts/verify_audit_chain.py` to detect any record modification, deletion, or insertion.
 - Added automated test suite in `backend/tests/test_audit_chain.py` verifying chain creation, streaming, and tamper detection.
 
-### Item 20: Field Encryption Key Rotation
-**Current state:** No tooling to rotate `FIELD_ENCRYPTION_KEY`. A rotation would require manual re-encryption of all `insurance_id_encrypted` fields.
-
-**Implementation:**
-1. Write a migration script `infra/scripts/rotate_field_key.py`
-2. Script reads old key, decrypts all encrypted columns, re-encrypts with new key, writes back
-3. Script must be idempotent and run in a transaction
-4. Document in `RUNBOOK.md`
+### ✅ Item 20: Field Encryption Key Rotation
+**Status:** ✅ Completed (2026-11-02).
+- Created CLI migration utility `backend/app/scripts/rotate_encryption_key.py` supporting `--old-key` and `--new-key`.
+- Implemented transactional batch decryption and re-encryption for all encrypted patient insurance records with pre-commit roundtrip verification.
+- Added comprehensive unit tests in `backend/tests/test_key_rotation.py` verifying full encryption rotation, decryption with new key, invalidation with old key, and input validation.
 
 ### Item 21: Data Retention Policy
 **Current state:** Soft-delete exists; no policy or tooling for permanent deletion.
