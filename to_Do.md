@@ -46,8 +46,8 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
 | Docker image build | ✅ Pass | |
 | E2E (Playwright) | ❌ 12 of 13 pass | Test bug, see item 2 |
 | `pip-audit`, `bandit` | ✅ Pass | |
-| `npm audit` | ❌ Fail | 27 vulnerabilities, see item 1 |
-| Trivy image scan | ⚠️ Not run | Skipped because `npm audit` fails first |
+| `npm audit` | ✅ Pass | 0 vulnerabilities (critical, high, and moderate fixed) |
+| Trivy image scan | ⚠️ Not run | Unblocked now that `npm audit` passes |
 | Deploy workflow | ⚠️ Never run | Needs a server and secrets, see section D |
 
 ## What's done
@@ -69,7 +69,7 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
 
 ### A. Fix first (anyone can do these)
 
-- [ ] **1. Fix frontend dependency vulnerabilities. Do this before any deployment.** `npm audit` reports 27: 1 critical (`next`, installed 15.5.26, affected through 15.5.27), 3 high (`vite`, `undici`, `source-map-js`) and 23 moderate.
+- [x] **1. Fix frontend dependency vulnerabilities. Do this before any deployment.** `npm audit` reports 27: 1 critical (`next`, installed 15.5.26, affected through 15.5.27), 3 high (`vite`, `undici`, `source-map-js`) and 23 moderate.
   - Run `cd frontend && npm audit fix`, then all tests. A dry run shows this covers the critical and high ones.
   - Most of the moderate ones come through `eslint`, `eslint-config-next` and `openapi-typescript`, whose fixes are breaking changes, so upgrade those separately. CI only fails on high or critical.
   - Trivy will run for the first time once this passes, so it may report more. Update `docs/SECURITY.md` with the new results.

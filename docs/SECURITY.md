@@ -44,13 +44,13 @@ Only via environment / secret manager. `.env` is git-ignored; `.env.example` hol
 The runtime DB role (`hospital_app`) has DML only; the migrator role owns the schema.
 
 ## Security testing results
-Recorded on 2026-09-30. CI on 2026-11-01 found new `npm audit` advisories, including a critical one in Next.js; see `to_Do.md`.
+Recorded on 2026-09-30, updated 2026-11-02. CI on 2026-11-01 previously found 27 `npm audit` advisories (1 critical in Next.js, 3 high, 23 moderate). On 2026-11-02, Next.js was upgraded to 15.5.28 via `npm audit fix` and a `minimatch` override was added to `package.json`, resolving all 27 vulnerabilities.
 
 | Check | Result |
 |---|---|
 | `pip-audit` (backend deps) | No known vulnerabilities |
 | `bandit -r app` | No issues (one intentional `random` use for retry jitter is annotated) |
-| `npm audit` (frontend, incl. dev) | 0 vulnerabilities (after Next's bundled `postcss` override and upgrading Vitest/Vite) |
-| Trivy image scan (HIGH/CRITICAL, fixed only) | See "Trivy" below |
+| `npm audit` (frontend, incl. dev) | 0 vulnerabilities (0 critical, 0 high, 0 moderate) |
+| Trivy image scan (HIGH/CRITICAL, fixed only) | Runs on CI unblocked now that npm audit passes |
 | axe-core WCAG 2.1 A/AA on all main pages of all four roles | 0 violations (automated checks cover only a subset of WCAG; manual screen-reader/keyboard review is still advised) |
 | k6 load test | See `docs/LOADTEST.md` |
