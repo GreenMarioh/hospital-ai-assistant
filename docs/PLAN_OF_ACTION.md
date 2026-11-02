@@ -388,14 +388,14 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 - OR adopt a zero-retention data processing agreement
 - This is a **project-owner decision** — cannot be done by developers alone
 
-### Item 16: Multi-Factor Authentication (MFA)
-**Current state:** No MFA. Password-only login for all roles.
-
-**Implementation path:**
-1. Add TOTP (Time-based One-Time Password) support
-2. Backend: new model `UserMFA` with TOTP secret; new endpoints `POST /api/auth/mfa/setup`, `POST /api/auth/mfa/verify`
-3. Frontend: setup flow (QR code display) and verification step on login
-4. Recommended library: `pyotp` on backend
+### ✅ Item 16: Multi-Factor Authentication (MFA)
+**Status:** ✅ Completed (2026-11-02).
+- Added standard RFC 6238 TOTP engine (`backend/app/services/mfa.py`) with zero new dependencies using standard library `hmac`, `hashlib`, `secrets`.
+- Added backward-compatible database migration `backend/alembic/versions/0002_user_mfa.py` adding `totp_secret` and `mfa_enabled` to `users`.
+- Added endpoints: `POST /api/auth/mfa/setup`, `POST /api/auth/mfa/enable`, `POST /api/auth/mfa/disable`, and `POST /api/auth/mfa/verify-login`.
+- Added two-step login with short-lived signed MFA ticket in `backend/app/services/auth.py` and `frontend/app/login/page.tsx`.
+- Created user MFA management screen in `frontend/app/mfa/page.tsx` with navigation link in `frontend/components/Shell.tsx`.
+- Added full test suite in `backend/tests/test_mfa.py` covering TOTP math, setup, enabling, login tickets, and disabling.
 
 ### Item 17: Real Virus Scanning
 **Current state:** [`backend/app/services/scan.py`](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/backend/app/services/scan.py) only detects the EICAR test file.

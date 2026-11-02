@@ -22,9 +22,11 @@ function store(): Storage | null {
   }
 }
 
-export function setTokens(pair: { access_token: string; refresh_token: string }) {
-  accessToken = pair.access_token;
-  store()?.setItem(REFRESH_KEY, pair.refresh_token);
+export function setTokens(pair: { access_token?: string | null; refresh_token?: string | null }) {
+  if (pair.access_token && pair.refresh_token) {
+    accessToken = pair.access_token;
+    store()?.setItem(REFRESH_KEY, pair.refresh_token);
+  }
 }
 
 export function clearTokens() {

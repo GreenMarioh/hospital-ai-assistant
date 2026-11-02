@@ -5,12 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.core.deps import get_current_user
 from app.core.ratelimit import AUTH_LIMIT, limiter
-from app.core.security import hash_password_async
+from app.core.security import hash_password_async, verify_password_async
 from app.models import Patient, User
 from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
+    MFADisableRequest,
+    MFAEnableRequest,
+    MFASetupResponse,
+    MFAVerifyLoginRequest,
     RefreshRequest,
     RegisterRequest,
     ResetPasswordRequest,
@@ -19,13 +23,19 @@ from app.schemas.auth import (
 )
 from app.services import auth as svc
 from app.services.email import send_email
+from app.services.mfa import generate_totp_secret, get_totp_uri, verify_totp
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 def user_out(u: User) -> UserOut:
     return UserOut(
-        id=u.id, email=u.email, full_name=u.full_name, role=u.role.name, is_active=u.is_active
+        id=u.id,
+        email=u.email,
+        full_name=u.full_name,
+        role=u.role.name,
+        is_active=u.is_active,
+        mfa_enabled=bool(u.mfa_enabled),
     )
 
 
@@ -63,7 +73,63 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
 @limiter.limit(AUTH_LIMIT)
 async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await svc.authenticate(db, body.email, body.password)
+    if user.mfa_enabled:
+        return TokenPair(
+            mfa_required=True,
+            mfa_ticket=svc.create_mfa_ticket(user.id),
+        )
     return await svc.issue_tokens(db, user)
+
+
+@router.post("/mfa/verify-login", response_model=TokenPair)
+@limiter.limit(AUTH_LIMIT)
+async def verify_mfa_login(
+    request: Request, body: MFAVerifyLoginRequest, db: AsyncSession = Depends(get_db)
+):
+    user_id = svc.decode_mfa_ticket(body.mfa_ticket)
+    user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+    if user is None or not user.is_active or not user.mfa_enabled or not user.totp_secret:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid MFA session")
+    if not verify_totp(user.totp_secret, body.code):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid two-factor authentication code")
+    return await svc.issue_tokens(db, user)
+
+
+@router.post("/mfa/setup", response_model=MFASetupResponse)
+async def setup_mfa(user: User = Depends(get_current_user)) -> MFASetupResponse:
+    secret = generate_totp_secret()
+    uri = get_totp_uri(secret, user.email)
+    return MFASetupResponse(secret=secret, otpauth_url=uri)
+
+
+@router.post("/mfa/enable", status_code=status.HTTP_204_NO_CONTENT)
+async def enable_mfa(
+    body: MFAEnableRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    if not verify_totp(body.secret, body.code):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid two-factor authentication code")
+    user.totp_secret = body.secret
+    user.mfa_enabled = True
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/mfa/disable", status_code=status.HTTP_204_NO_CONTENT)
+async def disable_mfa(
+    body: MFADisableRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    if not await verify_password_async(body.password, user.password_hash):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid current password")
+    if user.totp_secret and not verify_totp(user.totp_secret, body.code):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid two-factor authentication code")
+    user.totp_secret = None
+    user.mfa_enabled = False
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/refresh", response_model=TokenPair)
