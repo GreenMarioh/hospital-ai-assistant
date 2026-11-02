@@ -146,8 +146,14 @@ for (let i = 0; i < 10; i++) {
 
 ## Section B — Missing Features
 
-### Item 4: Change Password Feature
-**Status:** ❌ No endpoint or UI page. Critical before deployment.
+### ✅ Item 4: Change Password Feature
+**Status:** ✅ Completed (2026-11-02).
+- Added `ChangePasswordRequest` schema to `backend/app/schemas/auth.py`.
+- Added `change_password` service to `backend/app/services/auth.py` verifying current password, hashing new password with argon2id, and revoking all refresh tokens.
+- Added authenticated `POST /api/auth/change-password` route to `backend/app/api/auth.py`.
+- Added comprehensive unit tests in `backend/tests/test_auth.py` covering successful change, session revocation, invalid current password rejection, and weak new password rejection.
+- Updated `frontend/openapi.json` and regenerated `frontend/lib/api-types.ts`.
+- Created `/change-password` Next.js page in `frontend/app/change-password/page.tsx` and added navigation link in `frontend/components/Shell.tsx`.
 
 **Why it matters:** The [`docs/RUNBOOK.md`](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/docs/RUNBOOK.md) tells admins to change their password after first login, but there's no way to do so except "forgot password" (which requires working email).
 

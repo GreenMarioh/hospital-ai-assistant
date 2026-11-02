@@ -39,6 +39,11 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Password
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Password
+
+
 class UserOut(BaseModel):
     id: uuid.UUID
     email: str

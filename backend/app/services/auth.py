@@ -125,3 +125,15 @@ async def consume_reset_token(db: AsyncSession, raw: str, new_password: str) -> 
     token.used_at = datetime.now(UTC)
     await db.commit()
     await revoke_all(db, user.id)
+
+async def change_password(
+    db: AsyncSession, user: User, current_password: str, new_password: str
+) -> None:
+    if not await verify_password_async(current_password, user.password_hash):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Current password incorrect")
+    user.password_hash = await hash_password_async(new_password)
+    user.failed_attempts = 0
+    user.locked_until = None
+    await db.commit()
+    await revoke_all(db, user.id)
+

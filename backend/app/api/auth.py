@@ -8,6 +8,7 @@ from app.core.ratelimit import AUTH_LIMIT, limiter
 from app.core.security import hash_password_async
 from app.models import Patient, User
 from app.schemas.auth import (
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
     RefreshRequest,
@@ -98,6 +99,18 @@ async def reset_password(
     request: Request, body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
 ) -> Response:
     await svc.consume_reset_token(db, body.token, body.new_password)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(AUTH_LIMIT)
+async def change_password(
+    request: Request,
+    body: ChangePasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    await svc.change_password(db, user, body.current_password, body.new_password)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

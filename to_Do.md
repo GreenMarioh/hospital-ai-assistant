@@ -78,7 +78,7 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
 
 ### B. Missing features (anyone can do these)
 
-- [ ] **4. Change password.** `docs/RUNBOOK.md` and `.env.prod.example` tell the admin to change the password right after first login, but there is no endpoint or page for it. The only route is "forgot password", which needs working email. Needed before deployment.
+- [x] **4. Change password.** `docs/RUNBOOK.md` and `.env.prod.example` tell the admin to change the password right after first login, but there is no endpoint or page for it. The only route is "forgot password", which needs working email. Needed before deployment.
 - [ ] **5. Add screens for backend features that have no UI:**
   - patient data export: `GET /api/admin/patients/{id}/export`
   - patient deletion request: `POST /api/admin/patients/{id}/deletion-request`
