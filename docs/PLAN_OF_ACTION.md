@@ -397,15 +397,12 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 - Created user MFA management screen in `frontend/app/mfa/page.tsx` with navigation link in `frontend/components/Shell.tsx`.
 - Added full test suite in `backend/tests/test_mfa.py` covering TOTP math, setup, enabling, login tickets, and disabling.
 
-### Item 17: Real Virus Scanning
-**Current state:** [`backend/app/services/scan.py`](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/backend/app/services/scan.py) only detects the EICAR test file.
-
-**Implementation:**
-1. Add ClamAV to the Docker Compose (or use a ClamAV REST API service like `clamav-rest`)
-2. Add a `ClamAVScanner` implementation to `scan.py`
-3. Append it to `SCANNERS` list
-4. Test with EICAR and a clean file
-5. Add a test in `backend/tests/`
+### ✅ Item 17: Real Virus Scanning
+**Status:** ✅ Completed (2026-11-02).
+- Added `clamav_host`, `clamav_port`, `clamav_timeout` to `backend/app/core/config.py` and documented in `.env.example`.
+- Implemented `clamav_scanner` in `backend/app/services/scan.py` streaming file data to the clamd daemon via the standard TCP `zINSTREAM` protocol.
+- Appended `clamav_scanner` to `SCANNERS` with safe unconfigured and network error fallback.
+- Added comprehensive unit and integration tests in `backend/tests/test_scan.py` using an in-process mock clamd server (verifying clean files, threat parsing, and document upload rejection).
 
 ### Item 18: Stricter Browser Security (CSP)
 **Current state:** CSP uses `unsafe-inline`; refresh token stored in `sessionStorage`.

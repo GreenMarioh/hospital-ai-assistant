@@ -111,7 +111,7 @@ These are the known gaps from `docs/SECURITY.md`. The project is designed around
 
 - [ ] **15. Legal and compliance:** a risk assessment, plus a BAA or zero-retention terms with the LLM provider, because it receives symptom text and clinical excerpts. This needs a decision from the project owner.
 - [x] **16. Multi-factor login.** Implemented RFC 6238 TOTP two-factor authentication in `services/mfa.py`, backward-compatible schema migration `0002_user_mfa.py`, endpoints (`/api/auth/mfa/setup`, `/enable`, `/disable`, `/verify-login`), frontend two-step login in `/login`, and user management screen `/mfa`. Tested with unit and integration tests in `backend/tests/test_mfa.py`.
-- [ ] **17. Real virus scanning.** `services/scan.py` only detects the EICAR test file, so plug in ClamAV.
+- [x] **17. Real virus scanning.** Added ClamAV client (`clamav_scanner`) using the standard clamd `INSTREAM` protocol in `services/scan.py`, configured via `CLAMAV_HOST`/`CLAMAV_PORT` in `Settings`, with automated tests covering clean streams, threat detection, and upload rejection in `backend/tests/test_scan.py`.
 - [ ] **18. Stricter browser security:** replace CSP `unsafe-inline` with nonces, and consider moving the refresh token from `sessionStorage` to an httpOnly cookie.
 - [ ] **19. Tamper-proof audit logs:** they currently sit in the same database as the app, so ship them to write-once storage.
 - [ ] **20. Key rotation:** add tooling to rotate `FIELD_ENCRYPTION_KEY`. Today it would need manual re-encryption.

@@ -36,6 +36,9 @@ class Settings(BaseSettings):
 
     sentry_dsn: str = ""
     redis_url: str = ""  # shared rate-limit counters across workers; empty = per-process memory
+    clamav_host: str = ""
+    clamav_port: int = 3310
+    clamav_timeout: float = 10.0
 
     @property
     def cors_origin_list(self) -> list[str]:
