@@ -411,15 +411,13 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 - Configured frontend `frontend/lib/api.ts` with `credentials: "include"` for secure cookie transmission while maintaining backward compatibility with optional JSON body tokens.
 - Added automated unit and integration tests in `backend/tests/test_auth.py` verifying Set-Cookie issuance, cookie-based refresh without JSON body, and cookie invalidation upon logout.
 
-### Item 19: Tamper-Proof Audit Logs
-**Current state:** Audit logs sit in the same PostgreSQL database as the app — an attacker with DB access can alter them.
-
-**Options (cheapest to most robust):**
-1. Ship logs to a write-once S3 bucket with Object Lock enabled
-2. Forward logs to a SIEM (e.g., Datadog, Loki) in real time
-3. Hash-chain the log entries in the DB for detectable tampering
-
-**Implementation:** Hook into the `AuditMiddleware` ([`backend/app/core/audit.py`](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/backend/app/core/audit.py)) to also stream entries to S3/SIEM.
+### ✅ Item 19: Tamper-Proof Audit Logs
+**Status:** ✅ Completed (2026-11-02).
+- Added `prev_hash` and `entry_hash` columns with migration `0003_audit_log_hash_chain.py`.
+- Updated `backend/app/core/audit.py` to cryptographically link each audit record to the preceding record using SHA-256 hashes.
+- Added optional external append-only JSONL streaming (`AUDIT_LOG_STREAM_PATH`) for write-once / SIEM ingestion.
+- Added CLI verification tool `backend/app/scripts/verify_audit_chain.py` to detect any record modification, deletion, or insertion.
+- Added automated test suite in `backend/tests/test_audit_chain.py` verifying chain creation, streaming, and tamper detection.
 
 ### Item 20: Field Encryption Key Rotation
 **Current state:** No tooling to rotate `FIELD_ENCRYPTION_KEY`. A rotation would require manual re-encryption of all `insurance_id_encrypted` fields.

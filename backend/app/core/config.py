@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     clamav_host: str = ""
     clamav_port: int = 3310
     clamav_timeout: float = 10.0
+    audit_log_stream_path: str = ""  # optional: append-only JSONL stream for tamper-evident external storage
 
     @property
     def cors_origin_list(self) -> list[str]:
