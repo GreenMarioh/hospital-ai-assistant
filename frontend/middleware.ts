@@ -5,10 +5,10 @@ export function middleware(request: NextRequest) {
   const isProd = process.env.NODE_ENV === "production";
   const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-  // CSP with nonce for script-src and strict-dynamic in production
+  // CSP allowing Next.js chunks and inline scripts
   const cspHeader = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' ${isProd ? "'strict-dynamic'" : "'unsafe-eval'"}`,
+    `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
