@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.deps import get_current_user
 from app.core.ratelimit import AUTH_LIMIT, limiter
 from app.core.security import hash_password_async, verify_password_async
+from app.core.tokens import REFRESH_TTL
 from app.models import Patient, User
 from app.schemas.auth import (
     ChangePasswordRequest,
@@ -39,9 +41,28 @@ def user_out(u: User) -> UserOut:
     )
 
 
+def _set_refresh_cookie(response: Response, refresh_token: str | None) -> None:
+    if refresh_token:
+        s = get_settings()
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            samesite="lax",
+            secure=(s.environment == "prod"),
+            path="/api/auth",
+            max_age=int(REFRESH_TTL.total_seconds()),
+        )
+
+
 @router.post("/register", response_model=TokenPair, status_code=status.HTTP_201_CREATED)
 @limiter.limit(AUTH_LIMIT)
-async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(
+    request: Request,
+    response: Response,
+    body: RegisterRequest,
+    db: AsyncSession = Depends(get_db),
+):
     email = body.email.lower()
     if (await db.execute(select(User).where(User.email == email))).scalar_one_or_none():
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
@@ -66,25 +87,37 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
     )
     await db.commit()
     await db.refresh(user)
-    return await svc.issue_tokens(db, user)
+    tokens = await svc.issue_tokens(db, user)
+    _set_refresh_cookie(response, tokens.get("refresh_token"))
+    return tokens
 
 
 @router.post("/login", response_model=TokenPair)
 @limiter.limit(AUTH_LIMIT)
-async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(
+    request: Request,
+    response: Response,
+    body: LoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
     user = await svc.authenticate(db, body.email, body.password)
     if user.mfa_enabled:
         return TokenPair(
             mfa_required=True,
             mfa_ticket=svc.create_mfa_ticket(user.id),
         )
-    return await svc.issue_tokens(db, user)
+    tokens = await svc.issue_tokens(db, user)
+    _set_refresh_cookie(response, tokens.get("refresh_token"))
+    return tokens
 
 
 @router.post("/mfa/verify-login", response_model=TokenPair)
 @limiter.limit(AUTH_LIMIT)
 async def verify_mfa_login(
-    request: Request, body: MFAVerifyLoginRequest, db: AsyncSession = Depends(get_db)
+    request: Request,
+    response: Response,
+    body: MFAVerifyLoginRequest,
+    db: AsyncSession = Depends(get_db),
 ):
     user_id = svc.decode_mfa_ticket(body.mfa_ticket)
     user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
@@ -92,7 +125,9 @@ async def verify_mfa_login(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid MFA session")
     if not verify_totp(user.totp_secret, body.code):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid two-factor authentication code")
-    return await svc.issue_tokens(db, user)
+    tokens = await svc.issue_tokens(db, user)
+    _set_refresh_cookie(response, tokens.get("refresh_token"))
+    return tokens
 
 
 @router.post("/mfa/setup", response_model=MFASetupResponse)
@@ -134,14 +169,32 @@ async def disable_mfa(
 
 @router.post("/refresh", response_model=TokenPair)
 @limiter.limit(AUTH_LIMIT)
-async def refresh(request: Request, body: RefreshRequest, db: AsyncSession = Depends(get_db)):
-    return await svc.rotate_refresh(db, body.refresh_token)
+async def refresh(
+    request: Request,
+    response: Response,
+    body: RefreshRequest = RefreshRequest(),
+    db: AsyncSession = Depends(get_db),
+):
+    token = body.refresh_token or request.cookies.get("refresh_token")
+    if not token:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing refresh token")
+    tokens = await svc.rotate_refresh(db, token)
+    _set_refresh_cookie(response, tokens.get("refresh_token"))
+    return tokens
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(body: RefreshRequest, db: AsyncSession = Depends(get_db)) -> Response:
-    await svc.revoke_refresh(db, body.refresh_token)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    request: Request,
+    response: Response,
+    body: RefreshRequest = RefreshRequest(),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    token = body.refresh_token or request.cookies.get("refresh_token")
+    if token:
+        await svc.revoke_refresh(db, token)
+    response.delete_cookie("refresh_token", path="/api/auth")
+    return response
 
 
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)

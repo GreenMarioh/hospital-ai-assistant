@@ -124,6 +124,15 @@ async def revoke_all(db: AsyncSession, user_id: uuid.UUID) -> None:
     await db.commit()
 
 
+async def revoke_refresh(db: AsyncSession, raw: str) -> None:
+    token = (
+        await db.execute(select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
+    ).scalar_one_or_none()
+    if token and token.revoked_at is None:
+        token.revoked_at = datetime.now(UTC)
+        await db.commit()
+
+
 async def create_reset_token(db: AsyncSession, email: str) -> str | None:
     user = (await db.execute(select(User).where(User.email == email.lower()))).scalar_one_or_none()
     if user is None or not user.is_active:

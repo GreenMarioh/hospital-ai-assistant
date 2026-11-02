@@ -404,15 +404,12 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 - Appended `clamav_scanner` to `SCANNERS` with safe unconfigured and network error fallback.
 - Added comprehensive unit and integration tests in `backend/tests/test_scan.py` using an in-process mock clamd server (verifying clean files, threat parsing, and document upload rejection).
 
-### Item 18: Stricter Browser Security (CSP)
-**Current state:** CSP uses `unsafe-inline`; refresh token stored in `sessionStorage`.
-
-**Two changes:**
-1. **Replace `unsafe-inline` with nonces** in the Next.js CSP header (`next.config.ts` / middleware)
-2. **Move refresh token from `sessionStorage` to `httpOnly` cookie** — update [`frontend/lib/auth.tsx`](file:///c:/Users/mohni/Desktop/hospital-ai-assistant/frontend/lib/auth.tsx) and the corresponding backend `/api/auth/refresh` endpoint to set/read the cookie
-
-> [!NOTE]
-> Moving to httpOnly cookies requires CORS + `credentials: "include"` adjustments and Caddy `Set-Cookie` passthrough config.
+### ✅ Item 18: Stricter Browser Security (CSP & httpOnly Cookies)
+**Status:** ✅ Completed (2026-11-02).
+- Added `frontend/middleware.ts` generating per-request cryptographic nonces injected into `script-src` and `x-nonce` headers with `strict-dynamic` in production.
+- Configured backend to issue rotating `refresh_token` as an `httpOnly` cookie (`SameSite=Lax`, `Path=/api/auth`) upon registration, password login, MFA login, and refresh, clearing it upon logout.
+- Configured frontend `frontend/lib/api.ts` with `credentials: "include"` for secure cookie transmission while maintaining backward compatibility with optional JSON body tokens.
+- Added automated unit and integration tests in `backend/tests/test_auth.py` verifying Set-Cookie issuance, cookie-based refresh without JSON body, and cookie invalidation upon logout.
 
 ### Item 19: Tamper-Proof Audit Logs
 **Current state:** Audit logs sit in the same PostgreSQL database as the app — an attacker with DB access can alter them.

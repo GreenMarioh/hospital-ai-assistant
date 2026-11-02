@@ -299,3 +299,33 @@ async def test_change_password_success_and_revocation(client, unique_email):
     )
     assert login_new.status_code == 200
 
+
+
+async def test_refresh_token_cookie_flow(client, unique_email):
+    email = unique_email()
+    reg = await client.post("/api/auth/register", json={**REG, "email": email})
+    assert reg.status_code == 201
+    assert "set-cookie" in reg.headers
+    assert "refresh_token=" in reg.headers["set-cookie"]
+    assert "httponly" in reg.headers["set-cookie"].lower()
+
+    # Login sets cookie
+    login_res = await client.post(
+        "/api/auth/login", json={"email": email, "password": REG["password"]}
+    )
+    assert login_res.status_code == 200
+    assert "set-cookie" in login_res.headers
+    cookie_str = login_res.headers["set-cookie"]
+    assert "refresh_token=" in cookie_str
+
+    # Refresh using cookie without body
+    ref_res = await client.post("/api/auth/refresh")
+    assert ref_res.status_code == 200
+    ref_data = ref_res.json()
+    assert ref_data["access_token"] is not None
+    assert "refresh_token=" in ref_res.headers["set-cookie"]
+
+    # Logout clears cookie
+    logout_res = await client.post("/api/auth/logout")
+    assert logout_res.status_code == 204
+    assert "refresh_token="";" in logout_res.headers.get("set-cookie", "") or "max-age=0" in logout_res.headers.get("set-cookie", "").lower()
