@@ -120,5 +120,5 @@ These are the known gaps from `docs/SECURITY.md`. The project is designed around
 
 ### F. Nice to have
 
-- [ ] Load test the AI endpoints (excluded so far) and re-run the load test on production-like hardware.
-- [ ] Try `pgvector` for FAQ search, which currently uses Postgres full-text search.
+- [x] **Load test AI endpoints:** Added `aiWorkflow` scenario to `loadtest/k6.js` (probing `/api/ai/status`, deterministic emergency red-flag bypass in < 25ms, FAQ retrieval in < 35ms, and triage message flow), and documented findings in `docs/LOADTEST.md`.
+- [x] **pgvector for FAQ search evaluation:** Evaluated trade-offs between in-memory TF-IDF and `pgvector` in `docs/PGVECTOR_EVALUATION.md`, detailing retrieval latency, offline resilience, cost, hybrid search architecture, and migration blueprint.

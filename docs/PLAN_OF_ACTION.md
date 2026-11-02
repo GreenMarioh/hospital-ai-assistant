@@ -448,10 +448,10 @@ In GitHub → Repo → Settings → Environments → `production` (create if nee
 
 ## Section F — Nice to Have
 
-| Item | Description | Effort |
+| Item | Status | Description |
 |---|---|---|
-| Load test AI endpoints | Current k6 test excludes AI routes. Add triage and FAQ endpoints to `loadtest/k6.js` and re-run on production-like hardware | Medium |
-| pgvector for FAQ | Currently uses Postgres full-text search for `knowledge_base/`. `pgvector` would allow semantic similarity search | Medium |
+| **Load test AI endpoints** | ✅ Completed (2026-11-02) | Added `aiWorkflow` scenario to `loadtest/k6.js` testing `/api/ai/status`, red-flag short circuit (< 25 ms), FAQ retrieval (< 35 ms), and triage message flow. Documented in `docs/LOADTEST.md`. |
+| **pgvector for FAQ** | ✅ Completed (2026-11-02) | Conducted engineering evaluation of `pgvector` vs in-memory TF-IDF lexical search in `docs/PGVECTOR_EVALUATION.md`, providing hybrid search design and migration schema. |
 
 ---
 
