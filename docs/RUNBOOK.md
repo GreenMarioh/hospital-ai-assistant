@@ -69,7 +69,23 @@ Caddy retries upstreams for up to 15 s, so a rolling restart is normally invisib
 **Reminders not sending**: `docker compose logs worker`; the job is idempotent (dedupe keys in `notifications`), so restarting the worker never double-sends.
 
 ## 7. Routine maintenance
-Weekly: check backups exist off-host and the disk has space. Monthly: restore test, `pip-audit`/`npm audit` (CI does it on every push), rotate admin passwords, review users. Quarterly: rotate `SECRET_KEY`/DB passwords, review audit logs for unusual access, update base images (rebuild + deploy).
+- **Weekly**: Check backups exist off-host (`BACKUP_S3_URI`) and disk has space (`df -h`). Run token purge:
+  ```bash
+  docker compose -f docker-compose.prod.yml --env-file ../.env.prod run --rm backend python -m app.scripts.purge_data --purge-expired-tokens
+  ```
+- **Monthly**: Run backup restore test (`restore-test.sh`). Check `pip-audit` and `npm audit`. Run cryptographic audit chain verification:
+  ```bash
+  docker compose -f docker-compose.prod.yml --env-file ../.env.prod run --rm backend python -m app.scripts.verify_audit_chain
+  ```
+- **Quarterly**: Review administrative accounts and MFA enrollments. Review audit logs for anomalous cross-patient queries.
+- **Key Rotation**: When rotating `FIELD_ENCRYPTION_KEY`, run transactional re-encryption:
+  ```bash
+  docker compose -f docker-compose.prod.yml --env-file ../.env.prod run --rm backend python -m app.scripts.rotate_encryption_key --old-key <old> --new-key <new>
+  ```
+- **Permanent Purge**: Execute statutory clinical data retention purge on aged soft-deleted patient records (e.g. older than 30 days post-erasure):
+  ```bash
+  docker compose -f docker-compose.prod.yml --env-file ../.env.prod run --rm backend python -m app.scripts.purge_data --purge-soft-deleted-older-than-days 30
+  ```
 
 ## 8. Rehearse locally (what was verified)
 `infra/docker-compose.rehearsal.yml` runs the *production* compose file on unprivileged ports with Caddy's internal CA:
