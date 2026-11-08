@@ -1,6 +1,6 @@
 # Demo script (about 10 minutes)
 
-Setup: `make up && make seed` (or `make e2e-up`), open http://localhost:3000. Optional: set `ANTHROPIC_API_KEY` in `.env` before `make up` to see live AI replies; without it the graceful-degradation paths are shown instead (both are worth showing).
+Setup: `make up && make seed` (or `make e2e-up`), open http://localhost:3000. Optional: set `GEMINI_API_KEY` in `.env` before `make up` to see live AI replies; without it the graceful-degradation paths are shown instead (both are worth showing).
 
 1. **Patient onboarding (1 min)** - `/register` as a new patient → lands in the portal.
 2. **Emergency safety (1 min)** - Symptom check: type "I have crushing chest pain". Red banner appears instantly, urgency *emergency*, department *Emergency*, no LLM involved (point out: rules run first and cannot be overridden). Start a new check with "mild headache for two days": with an API key you get a guided conversation ending in urgency + department; without one you see the "assistant unavailable, you can still book" state.

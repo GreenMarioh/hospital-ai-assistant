@@ -38,11 +38,11 @@ k6 run -e BASE_URL=http://localhost:8000 -e AI_VUS=5 loadtest/k6.js
 3. **FAQ Knowledge Retrieval (`POST /api/ai/faq`):**
    - Evaluates TF-IDF in-memory retrieval over `knowledge_base/*.md`.
    - In fallback / degraded mode: **p95 < 35 ms**.
-   - With live Anthropic LLM: bounded by Anthropic API roundtrip (~800–1800 ms).
+   - With live LLM: bounded by the Gemini API roundtrip (figures below were estimated for the previous provider; re-measure with Gemini).
 4. **Routine Symptom Triage (`POST /api/ai/triage/message`):**
    - Evaluates structured JSON extraction and conversation persistence.
    - In fallback mode: returns advisory response with clinical safety disclaimer in < 30 ms.
-   - With live Anthropic LLM: p95 ~1200–2400 ms.
+   - With live LLM (previous-provider estimate): p95 ~1200–2400 ms.
 
 ---
 

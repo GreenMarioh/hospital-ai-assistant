@@ -39,7 +39,7 @@ async def complete_json[T: BaseModel](
     last_error = ""
     for attempt in range(2):
         resp = await llm.complete(
-            purpose=purpose, system=system, messages=convo, max_tokens=max_tokens
+            purpose=purpose, system=system, messages=convo, max_tokens=max_tokens, json_output=True
         )
         try:
             return model_cls.model_validate(extract_json(resp.text)), resp

@@ -130,7 +130,7 @@ async def _run(
     try:
         llm = llm_getter()
         prompt = load_prompt(prompt_name)
-        out, _ = await complete_json(
+        out, resp = await complete_json(
             llm,
             BriefingLLMOutput,
             purpose=purpose,
@@ -138,7 +138,7 @@ async def _run(
             messages=[{"role": "user", "content": f"<record>\n{record}\n</record>"}],
             max_tokens=1500,
         )
-        return out, getattr(llm, "model", None), prompt.version
+        return out, resp.model or getattr(llm, "model", None), prompt.version
     except AIError:
         return None, None, None
 

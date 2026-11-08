@@ -4,5 +4,5 @@ services:
   backend:
     environment:
       RATE_LIMIT_ENABLED: "false"
-      ANTHROPIC_API_KEY: ""
+      GEMINI_API_KEY: ""
       WEB_CONCURRENCY: "4"

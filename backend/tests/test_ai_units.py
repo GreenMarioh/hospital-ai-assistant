@@ -1,12 +1,12 @@
 import json
 from datetime import UTC, datetime
 
-import anthropic
 import httpx2
 import pytest
+from google.genai import errors as genai_errors
 
 from app.ai import client as client_mod
-from app.ai.client import AnthropicLLM, CircuitBreaker
+from app.ai.client import CircuitBreaker, GeminiLLM
 from app.ai.errors import AIInvalidOutput, AIUnavailable
 from app.ai.evals.run import load_cases, rule_results
 from app.ai.faq import load_chunks, retrieve
@@ -129,21 +129,27 @@ def test_circuit_breaker_states():
     assert not cb.is_open and cb.allow()
 
 
-def _resp(text="hi"):
-    from types import SimpleNamespace as NS
+def _resp(text="hi", parts=None):
+    from google.genai import types
 
-    return NS(
-        content=[NS(type="text", text=text)],
-        stop_reason="end_turn",
-        usage=NS(input_tokens=3, output_tokens=2),
+    return types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(role="model", parts=parts or [types.Part(text=text)]),
+                finish_reason=types.FinishReason.STOP,
+            )
+        ],
+        usage_metadata=types.GenerateContentResponseUsageMetadata(
+            prompt_token_count=3, candidates_token_count=2, thoughts_token_count=4
+        ),
     )
 
 
-class StubMessages:
+class StubModels:
     def __init__(self, *items):
         self.items, self.calls = list(items), 0
 
-    async def create(self, **kw):
+    async def generate_content(self, **kw):
         self.calls += 1
         self.last = kw
         item = self.items.pop(0)
@@ -154,54 +160,110 @@ class StubMessages:
 
 class StubClient:
     def __init__(self, *items):
-        self.messages = StubMessages(*items)
+        from types import SimpleNamespace as NS
+
+        self.models = StubModels(*items)
+        self.aio = NS(models=self.models)
 
 
-def _status_err(cls, code):
-    req = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
-    return cls("err", response=httpx2.Response(code, request=req), body=None)
+def _api_err(code):
+    cls = genai_errors.ServerError if code >= 500 else genai_errors.ClientError
+    return cls(code, {"error": {"code": code, "message": "err", "status": "X"}})
 
 
 async def _nosleep(_):
     return None
 
 
+def _llm(stub, **kw):
+    return GeminiLLM(client=stub, model="pro", flash_model="flash", sleep=_nosleep, **kw)
+
+
 async def test_llm_retries_transient_errors_then_succeeds(monkeypatch):
-    monkeypatch.setattr(client_mod.get_settings(), "anthropic_effort", "low")
-    stub = StubClient(
-        _status_err(anthropic.InternalServerError, 500),
-        _status_err(anthropic.RateLimitError, 429),
-        _resp("ok"),
+    monkeypatch.setattr(client_mod.get_settings(), "gemini_thinking_level", "low")
+    stub = StubClient(_api_err(500), _api_err(429), _resp("ok"))
+    llm = _llm(stub)
+    out = await llm.complete(
+        purpose="triage", system="s", messages=[{"role": "user", "content": "x"}]
     )
-    llm = AnthropicLLM(client=stub, model="m", sleep=_nosleep)
-    out = await llm.complete(purpose="t", system="s", messages=[{"role": "user", "content": "x"}])
-    assert out.text == "ok" and stub.messages.calls == 3 and out.input_tokens == 3
-    assert stub.messages.last["output_config"] == {"effort": "low"}
-    assert "temperature" not in stub.messages.last
+    assert out.text == "ok" and stub.models.calls == 3
+    assert out.input_tokens == 3 and out.output_tokens == 6 and out.model == "pro"
+    cfg = stub.models.last["config"]
+    assert stub.models.last["model"] == "pro"
+    assert cfg.system_instruction == "s" and cfg.thinking_config.thinking_level == "LOW"
+    assert cfg.temperature is None
+
+
+async def test_llm_routes_conversational_purposes_to_flash():
+    stub = StubClient(_resp("a"), _resp("b"))
+    llm = _llm(stub)
+    assert (await llm.complete(purpose="faq", system="s", messages=[])).model == "flash"
+    assert stub.models.last["model"] == "flash"
+    assert stub.models.last["config"].thinking_config is None  # empty setting omits it
+    await llm.complete(purpose="briefing", system="s", messages=[], json_output=True)
+    assert stub.models.last["model"] == "pro"
+    assert stub.models.last["config"].response_mime_type == "application/json"
+
+
+async def test_llm_tool_calls_round_trip():
+    from google.genai import types
+
+    call = types.Part(
+        function_call=types.FunctionCall(name="search_doctors", args={"department": "Cardiology"}),
+        thought_signature=b"sig",
+    )
+    stub = StubClient(_resp(parts=[call]), _resp("done"))
+    llm = _llm(stub)
+    tools = [{"name": "search_doctors", "description": "d", "input_schema": {"type": "object"}}]
+    msgs = [{"role": "user", "content": "book cardiology"}]
+    r1 = await llm.complete(purpose="booking", system="s", messages=msgs, tools=tools)
+    assert r1.stop_reason == "tool_use" and r1.tool_uses[0].name == "search_doctors"
+    assert r1.tool_uses[0].input == {"department": "Cardiology"} and r1.tool_uses[0].id
+    decl = stub.models.last["config"].tools[0].function_declarations[0]
+    assert decl.name == "search_doctors" and decl.parameters_json_schema == {"type": "object"}
+    tu = r1.tool_uses[0]
+    msgs += [
+        {"role": "assistant", "content": r1.raw_content},
+        {"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": tu.id, "name": tu.name, "content": "[1, 2]"}
+        ]},
+    ]  # fmt: skip
+    await llm.complete(purpose="booking", system="s", messages=msgs, tools=tools)
+    contents = stub.models.last["contents"]
+    assert [c.role for c in contents] == ["user", "model", "user"]
+    assert contents[1].parts[0].thought_signature == b"sig"  # echoed back verbatim
+    fr = contents[2].parts[0].function_response
+    assert fr.name == "search_doctors" and fr.id == tu.id and fr.response == {"output": [1, 2]}
+
+
+async def test_llm_skips_thought_parts_in_text():
+    from google.genai import types
+
+    stub = StubClient(
+        _resp(parts=[types.Part(text="thinking...", thought=True), types.Part(text="answer")])
+    )
+    out = await _llm(stub).complete(purpose="faq", system="s", messages=[])
+    assert out.text == "answer"
 
 
 async def test_llm_does_not_retry_client_errors_and_trips_breaker():
-    stub = StubClient(*[_status_err(anthropic.BadRequestError, 400)] * 3)
-    llm = AnthropicLLM(
-        client=stub, model="m", breaker=CircuitBreaker(threshold=2, reset_s=60), sleep=_nosleep
-    )
+    stub = StubClient(*[_api_err(400)] * 3)
+    llm = _llm(stub, breaker=CircuitBreaker(threshold=2, reset_s=60))
     for _ in range(2):
         with pytest.raises(AIUnavailable):
             await llm.complete(purpose="t", system="s", messages=[])
-    assert stub.messages.calls == 2  # one attempt each: 400s are not retried
+    assert stub.models.calls == 2  # one attempt each: 400s are not retried
     with pytest.raises(AIUnavailable, match="circuit open"):
         await llm.complete(purpose="t", system="s", messages=[])
-    assert stub.messages.calls == 2  # breaker short-circuits without calling the provider
+    assert stub.models.calls == 2  # breaker short-circuits without calling the provider
 
 
 async def test_llm_gives_up_after_max_attempts():
-    stub = StubClient(
-        *[anthropic.APIConnectionError(request=httpx2.Request("POST", "https://x"))] * 3
-    )
-    llm = AnthropicLLM(client=stub, model="m", sleep=_nosleep)
+    stub = StubClient(*[httpx2.ConnectError("down")] * 3)
+    llm = _llm(stub)
     with pytest.raises(AIUnavailable):
         await llm.complete(purpose="t", system="s", messages=[])
-    assert stub.messages.calls == 3
+    assert stub.models.calls == 3
 
 
 def test_get_llm_unavailable_when_unconfigured():

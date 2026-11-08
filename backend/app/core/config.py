@@ -15,9 +15,13 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://hospital_app:change-me-too@db:5432/hospital"
     migration_database_url: str = ""
 
-    anthropic_api_key: str = ""
-    anthropic_model: str = "claude-sonnet-5-5"
-    anthropic_effort: str = ""  # optional: low|medium|high|xhigh|max; empty omits the parameter
+    gemini_api_key: str = ""
+    # Free-tier-safe defaults (see docs/DECISIONS.md); use a stronger GEMINI_MODEL on a paid key.
+    gemini_model: str = "gemini-3.5-flash-lite"  # clinical: triage, summaries
+    gemini_flash_model: str = "gemini-3.1-flash-lite"  # conversational: booking assistant, FAQ
+    # optional: minimal|low|medium|high; empty omits the parameter (model default)
+    gemini_thinking_level: str = ""
+    gemini_flash_thinking_level: str = ""
     ai_enabled: bool = True
 
     storage_backend: str = "local"
@@ -39,7 +43,9 @@ class Settings(BaseSettings):
     clamav_host: str = ""
     clamav_port: int = 3310
     clamav_timeout: float = 10.0
-    audit_log_stream_path: str = ""  # optional: append-only JSONL stream for tamper-evident external storage
+    audit_log_stream_path: str = (
+        ""  # optional: append-only JSONL stream for tamper-evident external storage
+    )
 
     @property
     def cors_origin_list(self) -> list[str]:

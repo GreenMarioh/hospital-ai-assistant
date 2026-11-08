@@ -11,22 +11,21 @@ The Hospital AI Assistant is engineered with technical, physical, and administra
 
 > [!IMPORTANT]
 > Software architecture alone cannot grant legal compliance certification. Full regulatory compliance requires that the covered entity (the hospital, clinic, or healthcare provider organisation):
-> 1. Formally executes a **Business Associate Agreement (BAA)** or **Data Processing Agreement (DPA)** with all third-party vendors processing Protected Health Information (PHI) — specifically Anthropic, cloud hosting providers, and email relays.
+> 1. Formally executes a **Business Associate Agreement (BAA)** or **Data Processing Agreement (DPA)** with all third-party vendors processing Protected Health Information (PHI) — specifically Google (Gemini API), cloud hosting providers, and email relays.
 > 2. Adopts written operational policies covering employee access, training, and workstation security.
 > 3. Periodically conducts and signs off on an institutional Risk Assessment.
 
 ---
 
-## 2. Third-Party LLM Processing (Anthropic BAA & Zero-Retention)
+## 2. Third-Party LLM Processing (Google Gemini: BAA & Data Use)
 
 ### 2.1 The PHI Challenge in AI Triage
 The AI triage and summarisation workflows receive unstructured symptom text, patient age, and clinical notes. Although `backend/app/ai/pii.py` performs deterministic de-identification (scrubbing emails, phone numbers, postal codes, and specific identifiers before LLM prompts), clinical descriptions may still inherently constitute PHI under HIPAA 45 CFR § 160.103.
 
-### 2.2 Anthropic BAA Requirements
-1. **Commercial Tier Requirement:** Anthropic enters into Business Associate Agreements (BAAs) with eligible commercial enterprise customers. The project owner MUST execute Anthropic's standard BAA prior to routing live patient interactions through the API.
-2. **Zero Data Retention (ZDR):** Under the BAA, Anthropic acts as a HIPAA Business Associate. Ensure the organisation account is enrolled in Anthropic's Commercial Terms where:
-   - Prompts and completions are **never used to train** future foundational models.
-   - Prompts are processed ephemerally in volatile memory and are not persisted in server logs beyond transient routing requirements.
+### 2.2 Google BAA Requirements
+1. **Never use the free tier for PHI.** Under Google's terms, content sent to the free tier of the Gemini Developer API may be used to improve Google products and may be reviewed by humans. Live patient traffic MUST use a paid (billing-enabled) project at minimum.
+2. **BAA coverage:** The project owner MUST execute Google's HIPAA BAA and confirm that the exact service in use (Gemini Developer API vs. Gemini on Vertex AI, which only needs `vertexai=True` plus a project and location in the `google-genai` client) is listed as a covered service. Vertex AI is the usual route for HIPAA workloads.
+3. **Data use and retention:** Confirm in writing that prompts and completions are **not used to train** models, and review Google's abuse-monitoring log retention and any zero-data-retention options for the chosen service.
 3. **Regional Hosting / Data Sovereignty:** Verify that API traffic terminates within required legal jurisdictions (e.g., US-based data centers for US HIPAA entities, EU data regions for GDPR).
 
 ---
@@ -65,7 +64,7 @@ To satisfy regulatory transparency guidelines (FDA guidance on Clinical Decision
 ## 5. Organizational Action Items Prior to Live Patient Data
 
 Before toggling production traffic with real patient records:
-- [ ] Sign formal BAA with Anthropic (via Anthropic Sales / Console).
+- [ ] Sign Google's HIPAA BAA and confirm the Gemini service in use is covered (paid tier / Vertex AI; never the free tier).
 - [ ] Sign formal BAA / DPA with transactional email provider (SendGrid / AWS SES / Mailgun).
 - [ ] Sign BAA with cloud infrastructure provider (AWS / Google Cloud / Azure / Ubuntu host).
 - [ ] Verify `FIELD_ENCRYPTION_KEY` and the `age` backup private key are securely vaulted in an institutional key management system (e.g. AWS KMS, HashiCorp Vault), strictly isolated from the application server.

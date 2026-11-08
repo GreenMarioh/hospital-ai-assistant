@@ -21,7 +21,7 @@ Caddy (80/443, automatic Let's Encrypt certificates) routes `/api/*`, `/healthz`
      ```bash
      sudo -u deploy git clone git@github.com:<owner>/<repo>.git /opt/hospital
      ```
-4. `cp .env.prod.example .env.prod && chmod 600 .env.prod` in `/opt/hospital` and fill it in: `DOMAIN`, `ACME_EMAIL`, `GHCR_OWNER`, strong random `SECRET_KEY`, `FIELD_ENCRYPTION_KEY` (`python3 -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())"`), DB passwords (and the two DB URLs), `ANTHROPIC_API_KEY`, SMTP settings (`EMAIL_BACKEND=smtp`), `ADMIN_EMAIL`/`ADMIN_PASSWORD`, `BACKUP_AGE_RECIPIENT`.
+4. `cp .env.prod.example .env.prod && chmod 600 .env.prod` in `/opt/hospital` and fill it in: `DOMAIN`, `ACME_EMAIL`, `GHCR_OWNER`, strong random `SECRET_KEY`, `FIELD_ENCRYPTION_KEY` (`python3 -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())"`), DB passwords (and the two DB URLs), `GEMINI_API_KEY`, SMTP settings (`EMAIL_BACKEND=smtp`), `ADMIN_EMAIL`/`ADMIN_PASSWORD`, `BACKUP_AGE_RECIPIENT`.
    - **Back up `FIELD_ENCRYPTION_KEY` and the age private key somewhere safe and separate from the server.** Losing either means unrecoverable data / backups.
 5. GitHub repo settings → Secrets (environment `production` or Repository Secrets): `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` (private key matching `authorized_keys`), `GHCR_READ_TOKEN` (PAT with `read:packages`).
 6. Seed the first admin and reference data (no demo data in prod because `ENVIRONMENT=prod`):

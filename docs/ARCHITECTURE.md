@@ -10,7 +10,7 @@ flowchart LR
   API --> DB[(PostgreSQL 16)]
   API --> R[(Redis<br/>rate-limit counters)]
   API --> ST[(Storage: local volume / S3)]
-  API -->|timeouts, retries, circuit breaker| LLM[Anthropic API]
+  API -->|timeouts, retries, circuit breaker| LLM[Google Gemini API<br/>Pro + Flash]
   W[Worker: APScheduler<br/>reminders] --> DB
   API --> KB[[knowledge_base/*.md]]
   B[Backup cron: pg_dump | age] --> DB

@@ -212,7 +212,12 @@ async def booking_turn(
                 out = await run_tool(db, tu.name, tu.input, proposals)
                 new_proposal = next(iter(set(proposals) - before), new_proposal)
                 results.append(
-                    {"type": "tool_result", "tool_use_id": tu.id, "content": json.dumps(out)}
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": tu.id,
+                        "name": tu.name,
+                        "content": json.dumps(out),
+                    }
                 )
             messages.append({"role": "user", "content": results})
         else:

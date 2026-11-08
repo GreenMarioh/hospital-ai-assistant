@@ -10,7 +10,7 @@
 |---|---|
 | Backend | Python 3.14, FastAPI, SQLAlchemy 2 async, Alembic, Pydantic v2, PostgreSQL 16, APScheduler |
 | Frontend | Next.js 15 (App Router, TypeScript), Tailwind, Recharts, `openapi-fetch` |
-| AI | Anthropic Claude API — triage, booking assistant (tool-use), summaries, FAQ |
+| AI | Google Gemini API (Pro + Flash, `google-genai` SDK) — triage, booking assistant (tool-use), summaries, FAQ |
 | Ops | Docker Compose, Caddy HTTPS, Redis, GitHub Actions CI/CD, age-encrypted backups |
 
 **4 roles:** Admin · Doctor · Reception Staff · Patient  
@@ -284,10 +284,10 @@ class ChangePasswordRequest(BaseModel):
 
 ### Item 7: Run the Live LLM Evaluation
 **Status:** ❌ NOT RUN. AI only tested against a fake client.  
-**Requires:** An Anthropic API key.
+**Requires:** A Gemini API key.
 
 **Steps:**
-1. Add `ANTHROPIC_API_KEY=sk-ant-...` to `.env`
+1. Add `GEMINI_API_KEY=...` to `.env`
 2. From the `backend/` directory (inside the Docker container or venv):
    ```bash
    python -m app.ai.evals.run --live

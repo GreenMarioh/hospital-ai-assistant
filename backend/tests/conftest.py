@@ -33,7 +33,7 @@ os.environ["FIELD_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 os.environ["SECRET_KEY"] = "test-secret-key-test-secret-key-test-secret"
 os.environ["ENVIRONMENT"] = "test"
 os.environ["AI_ENABLED"] = "true"
-os.environ["ANTHROPIC_API_KEY"] = ""
+os.environ["GEMINI_API_KEY"] = ""
 os.environ["UPLOAD_DIR"] = "/tmp/hospital-test-uploads"
 
 from app.core import security

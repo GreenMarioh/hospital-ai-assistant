@@ -44,7 +44,7 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
 | Backend tests | ✅ Pass | 132 passed, 94.6% coverage |
 | Frontend tests | ✅ Pass | 18 unit tests and a production build |
 | Docker image build | ✅ Pass | |
-| E2E (Playwright) | ✅ 13 of 13 pass | Fixed weekend day advance in reception.spec.ts |
+| E2E (Playwright) | ❌ 12 of 13 pass (2026-11-08) | Admin sign-out does not return to login; see `docs/TEST_REPORT.md` |
 | `pip-audit`, `bandit` | ✅ Pass | |
 | `npm audit` | ✅ Pass | 0 vulnerabilities (critical, high, and moderate fixed) |
 | Trivy image scan | ⚠️ Not run | Unblocked now that `npm audit` passes |
@@ -86,9 +86,9 @@ From the first CI run this project has ever had, on 2026-11-01. Earlier results 
   - [x] visit edit history: `GET /api/visits/{id}/versions` (added to `/doctor/patients/[id]`)
 - [x] **6. Test real email and S3 storage.** Added Mailpit and MinIO to dev compose and CI; implemented resilient STARTTLS / SMTPS in `services/email.py` and S3 region / NoSuchKey handling in `services/storage.py`; added comprehensive test suites in `backend/tests/test_email_smtp.py` and `backend/tests/test_storage_s3.py` (in-process RFC 5321 SMTP, password-reset email delivery, Mailpit API checks, botocore S3 Stubber, and MinIO live roundtrip).
 
-### C. Live AI (needs an Anthropic API key)
+### C. Live AI (needs a Gemini API key)
 
-- [ ] **7. Run the live evaluation.** Set `ANTHROPIC_API_KEY`, run `python -m app.ai.evals.run --live` from `backend/`, then commit the updated `backend/app/ai/evals/REPORT.md`. LLM accuracy is currently **NOT RUN**, and the AI has only been tested against a fake client. (Deferred by user; will be run once API key is provided).
+- [x] **7. Run the live evaluation.** Done 2026-11-08 on Gemini (`gemini-3.5-flash-lite`): urgency 80%, department 77%, one under-triage (u12, shingles). Results in `backend/app/ai/evals/REPORT.md` and `docs/TEST_REPORT.md`.
 - [x] **8. Get the triage rules checked by a clinician.** Audited 37 baseline cases against Manchester Triage System (MTS) & Emergency Severity Index (ESI) standards. Expanded evaluation suite to 60 cases (+23 clinical synthetic cases covering sepsis, epiglottitis/stridor, acute aortic syndrome, CRAO, toxic inhalation, neonatal lethargy, and trauma). Refined deterministic red-flag regex rules in `backend/app/ai/redflags.py`, achieving 100% emergency recall (23/23) and 0% false positives (0/37). Documented clinical review methodology and benchmark dictionary in `backend/app/ai/evals/CLINICAL_REVIEW.md`.
 
 ### D. Deployment (needs the project owner's accounts)
@@ -122,3 +122,14 @@ These are the known gaps from `docs/SECURITY.md`. The project is designed around
 
 - [x] **Load test AI endpoints:** Added `aiWorkflow` scenario to `loadtest/k6.js` (probing `/api/ai/status`, deterministic emergency red-flag bypass in < 25ms, FAQ retrieval in < 35ms, and triage message flow), and documented findings in `docs/LOADTEST.md`.
 - [x] **pgvector for FAQ search evaluation:** Evaluated trade-offs between in-memory TF-IDF and `pgvector` in `docs/PGVECTOR_EVALUATION.md`, detailing retrieval latency, offline resilience, cost, hybrid search architecture, and migration blueprint.
+
+### D. Bugs found in the 2026-11-08 full test run (details in `docs/TEST_REPORT.md`)
+
+- [ ] **Forgot-password returns 500**: `backend/app/api/auth.py:209` passes the `User` object to `create_reset_token`, which expects an email.
+- [ ] **Red-flag rules ignore negation**: "no chest pain" triggers the emergency path (`backend/app/ai/redflags.py`).
+- [ ] **Purge crashes**: `backend/app/scripts/purge_data.py:84` uses `AIConversation.patient_id`, which does not exist (item 21 is not really done).
+- [ ] **Logout / refresh-cookie tests fail**: an audit-log insert has a NULL `status_code` (item 18 is not really done).
+- [ ] **Admin "Sign out" in the browser** stays on the page (E2E `full-flow.spec.ts:106`).
+- [ ] **Key rotation test fails** (`MissingGreenlet`, `InvalidToken`); **SMTP STARTTLS test fails**; **S3 tests** need KMS on MinIO or no SSE-KMS in dev.
+- [ ] **Test isolation**: 22 backend tests fail only in the full run (documents, patients_records, rbac). Make the fixtures independent.
+- [ ] **Triage over-triages** urgent cases to Emergency (9 of 15 on Flash-Lite). Tune the prompt or use a stronger model on a paid key.

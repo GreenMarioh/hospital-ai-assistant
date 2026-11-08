@@ -13,9 +13,17 @@ class FakeLLM:
         self.script = list(script)
         self.calls: list[dict[str, Any]] = []
 
-    async def complete(self, *, purpose, system, messages, tools=None, max_tokens=1500):
+    async def complete(
+        self, *, purpose, system, messages, tools=None, max_tokens=1500, json_output=False
+    ):
         self.calls.append(
-            {"purpose": purpose, "system": system, "messages": messages, "tools": tools}
+            {
+                "purpose": purpose,
+                "system": system,
+                "messages": messages,
+                "tools": tools,
+                "json_output": json_output,
+            }
         )
         item = self.script.pop(0)
         if isinstance(item, Exception):

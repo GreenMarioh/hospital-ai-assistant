@@ -10,7 +10,7 @@ Four roles (admin, doctor, reception staff, patient) with server-side RBAC, a fu
 |---|---|
 | Backend | Python 3.14, FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2, PostgreSQL 16, APScheduler |
 | Frontend | Next.js 15 (App Router, TypeScript), Tailwind, Recharts, typed client generated from OpenAPI |
-| AI | Anthropic API (model from `ANTHROPIC_MODEL`) for triage, booking assistant (tool use), summaries, FAQ |
+| AI | Google Gemini via the `google-genai` SDK: Gemini Pro (`GEMINI_MODEL`) for triage and summaries, Gemini Flash (`GEMINI_FLASH_MODEL`) for the booking assistant (tool use) and FAQ |
 | Ops | Docker Compose, Caddy (automatic HTTPS), Redis (shared rate limits), GitHub Actions CI/CD, encrypted backups |
 
 ## Screenshots
@@ -31,7 +31,7 @@ Open **http://localhost:3000** and sign in with a demo account (password `DemoPa
 API docs: http://localhost:8000/docs · health: `/healthz`, `/readyz`.
 `make down` stops everything (`docker compose ... down -v` also wipes the database).
 
-**Enable live AI** (optional): put your key in `.env` (`ANTHROPIC_API_KEY=...`, optionally `ANTHROPIC_MODEL`), then `make up` again. Without a key the app is fully usable; triage still flags emergencies and offers direct booking, FAQ returns excerpts, briefings fall back to a structured overview.
+**Enable live AI** (optional): put your key in `.env` (`GEMINI_API_KEY=...`, optionally `GEMINI_MODEL` / `GEMINI_FLASH_MODEL`), then `make up` again. Without a key the app is fully usable; triage still flags emergencies and offers direct booking, FAQ returns excerpts, briefings fall back to a structured overview.
 
 ## Configuration (`.env`, see `.env.example`)
 | Variable | Purpose |
@@ -39,7 +39,7 @@ API docs: http://localhost:8000/docs · health: `/healthz`, `/readyz`.
 | `SECRET_KEY` | JWT signing key (rotate to log everyone out) |
 | `FIELD_ENCRYPTION_KEY` | Fernet key for column-level encryption of insurance IDs. **Back it up.** |
 | `DATABASE_URL` / `MIGRATION_DATABASE_URL` | Runtime (DML-only) and migrator (schema owner) DB roles |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`, `AI_ENABLED` | AI provider settings (`ANTHROPIC_EFFORT` optional) |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FLASH_MODEL`, `GEMINI_THINKING_LEVEL`, `GEMINI_FLASH_THINKING_LEVEL`, `AI_ENABLED` | AI provider settings (thinking levels optional) |
 | `CORS_ORIGINS`, `HOSPITAL_TIMEZONE` | Allowed browser origins; slot generation and display timezone |
 | `STORAGE_BACKEND` (`local`/`s3`), `UPLOAD_DIR`, `S3_*` | Document storage |
 | `EMAIL_BACKEND` (`console`/`smtp`), `SMTP_*` | Password reset and reminders (console logs them in dev) |
@@ -69,7 +69,8 @@ Test status: 132 backend unit/integration tests at 95 % coverage (CI gate 80 %),
 | `docs/ARCHITECTURE.md` | System architecture, ER diagram, security services, data flows |
 | `docs/API.md` | Complete REST API endpoint reference |
 | `docs/SECURITY.md` | STRIDE threat model, PHI handling, MFA, encryption, WAF, accessibility audit |
-| `docs/COMPLIANCE.md` | HIPAA / GDPR compliance mapping, Anthropic BAA & zero-retention requirements |
+| `docs/TEST_REPORT.md` | Latest full test run: live Gemini checks, eval results, open bugs |
+| `docs/COMPLIANCE.md` | HIPAA / GDPR compliance mapping, Google BAA & data-use requirements for Gemini |
 | `docs/RUNBOOK.md` | Server provisioning, deployment, rollback, backup/restore, incident responses |
 | `docs/LOADTEST.md` | k6 load-testing results (50 VUs, AI triage and FAQ benchmark latency) |
 | `docs/DECISIONS.md` | Architectural decisions, constraints, trade-offs |

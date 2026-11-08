@@ -1,7 +1,8 @@
 """Triage evaluation.
 
   python -m app.ai.evals.run            # rule pre-check only (offline, deterministic)
-  python -m app.ai.evals.run --live     # also run the full LLM pipeline (needs ANTHROPIC_API_KEY)
+  python -m app.ai.evals.run --live     # also run the full LLM pipeline (needs GEMINI_API_KEY)
+  python -m app.ai.evals.run --live --delay 7   # pace LLM calls (free-tier per-minute limits)
 
 Writes app/ai/evals/REPORT.md. LLM sections are marked NOT RUN unless --live succeeded.
 """
@@ -45,14 +46,14 @@ def rule_results(cases: list[dict]) -> dict:
     }
 
 
-async def live_results(cases: list[dict]) -> dict:
-    from app.ai.client import AnthropicLLM
+async def live_results(cases: list[dict], delay: float = 0.0) -> dict:
+    from app.ai.client import GeminiLLM
     from app.ai.guards import violates_safety
     from app.ai.prompts import load_prompt
     from app.ai.structured import complete_json
     from app.schemas.ai import TriageLLMOutput
 
-    llm = AnthropicLLM()
+    llm = GeminiLLM()
     prompt = load_prompt("triage")
     rows = []
     for c in cases:
@@ -69,10 +70,12 @@ async def live_results(cases: list[dict]) -> dict:
             )
             + "\nThe patient has given all the information they will give: finish now with ready=true."
         )
+        if delay and rows and rows[-1]["source"] != "rules":
+            await asyncio.sleep(delay)
         msgs = [{"role": "user", "content": f"<patient_message>{c['message']}</patient_message>"}]
         try:
             out, _ = await complete_json(
-                llm, TriageLLMOutput, purpose="eval", system=system, messages=msgs
+                llm, TriageLLMOutput, purpose="triage", system=system, messages=msgs
             )
             rows.append(
                 {
@@ -89,7 +92,8 @@ async def live_results(cases: list[dict]) -> dict:
                     **c,
                     "got_urgency": None,
                     "got_department": None,
-                    "source": f"error:{type(exc).__name__}",
+                    "source": f"error:{type(exc).__name__}"
+                    + (f"({code})" if (code := getattr(exc.__cause__, "code", None)) else ""),
                 }
             )
     n = len(rows)
@@ -107,7 +111,7 @@ async def live_results(cases: list[dict]) -> dict:
         "urgency_acc": urg / n,
         "department_acc": dep / n,
         "under_triaged": under,
-        "model": llm.model,
+        "model": llm.model_for("triage"),
         "prompt_version": prompt.version,
     }
 
@@ -134,7 +138,7 @@ def report(cases: list[dict], rules: dict, live: dict | None) -> str:
     ]
     if live is None:
         lines.append(
-            "**NOT RUN.** Run `python -m app.ai.evals.run --live` with `ANTHROPIC_API_KEY` set to fill this in."
+            "**NOT RUN.** Run `python -m app.ai.evals.run --live` with `GEMINI_API_KEY` set to fill this in."
         )
     else:
         lines += [
@@ -153,15 +157,16 @@ def report(cases: list[dict], rules: dict, live: dict | None) -> str:
     return "\n".join(lines) + "\n"
 
 
-async def main(live: bool) -> None:
+async def main(live: bool, delay: float = 0.0) -> None:
     cases = load_cases()
     rules = rule_results(cases)
     live_res = None
     if live:
         from app.ai.client import ai_configured
+
         if not ai_configured():
-            raise SystemExit("ANTHROPIC_API_KEY not configured; cannot run --live")
-        live_res = await live_results(cases)
+            raise SystemExit("GEMINI_API_KEY not configured; cannot run --live")
+        live_res = await live_results(cases, delay)
     (HERE / "REPORT.md").write_text(report(cases, rules, live_res))
     print((HERE / "REPORT.md").read_text())
 
@@ -169,4 +174,6 @@ async def main(live: bool) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--live", action="store_true")
-    asyncio.run(main(ap.parse_args().live))
+    ap.add_argument("--delay", type=float, default=0.0, help="seconds between LLM calls")
+    args = ap.parse_args()
+    asyncio.run(main(args.live, args.delay))
