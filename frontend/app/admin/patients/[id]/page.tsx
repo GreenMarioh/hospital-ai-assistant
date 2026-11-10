@@ -71,10 +71,10 @@ export default function AdminPatientDetail() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <Link href="/admin/patients" className="text-xs font-medium text-blue-800 underline">
+          <Link href="/admin/patients" className="text-xs link">
             ← Back to patients
           </Link>
-          <h1 className="text-2xl font-bold mt-1">
+          <h1 className="page-title mt-1">
             {p.first_name} {p.last_name}
           </h1>
         </div>
@@ -102,7 +102,7 @@ export default function AdminPatientDetail() {
               </Button>
             </div>
           ) : (
-            <Button variant="danger" disabled={busy} onClick={() => setConfirmDelete(true)}>
+            <Button variant="dangerQuiet" disabled={busy} onClick={() => setConfirmDelete(true)}>
               Process deletion request
             </Button>
           )}

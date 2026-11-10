@@ -127,7 +127,7 @@ export default function ReceptionPatients() {
   const pages = list.data ? Math.max(1, Math.ceil(list.data.total / list.data.size)) : 1;
   return (
     <>
-      <h1 className="text-2xl font-bold">Patients</h1>
+      <h1 className="page-title">Patients</h1>
       <Card title="Search patients">
         <form
           className="flex flex-wrap items-end gap-2"
@@ -154,41 +154,43 @@ export default function ReceptionPatients() {
           <Empty>No patients found.</Empty>
         ) : (
           <>
-            <table className="mt-3 w-full text-sm">
-              <caption className="sr-only">Patient search results</caption>
-              <thead>
-                <tr className="text-left text-slate-700">
-                  <th scope="col" className="py-1">
-                    Name
-                  </th>
-                  <th scope="col">DOB</th>
-                  <th scope="col">Phone</th>
-                  <th scope="col">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.data?.items.map((p) => (
-                  <tr key={p.id} className="border-t">
-                    <td className="py-2">
-                      {p.first_name} {p.last_name}
-                    </td>
-                    <td>{p.date_of_birth}</td>
-                    <td>{p.phone ?? "—"}</td>
-                    <td className="text-right">
-                      <Link className="text-blue-800 underline" href={`/reception/patients/${p.id}`}>
-                        Open
-                        <span className="sr-only">
-                          {" "}
-                          {p.first_name} {p.last_name}
-                        </span>
-                      </Link>
-                    </td>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <caption className="sr-only">Patient search results</caption>
+                <thead>
+                  <tr className="text-left text-slate-700">
+                    <th scope="col" className="py-1">
+                      Name
+                    </th>
+                    <th scope="col">DOB</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {list.data?.items.map((p) => (
+                    <tr key={p.id} className="border-t">
+                      <td className="py-2">
+                        {p.first_name} {p.last_name}
+                      </td>
+                      <td className="whitespace-nowrap pr-3">{p.date_of_birth}</td>
+                      <td className="whitespace-nowrap pr-3">{p.phone ?? "—"}</td>
+                      <td className="text-right">
+                        <Link className="link" href={`/reception/patients/${p.id}`}>
+                          Open
+                          <span className="sr-only">
+                            {" "}
+                            {p.first_name} {p.last_name}
+                          </span>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <nav aria-label="Pagination" className="mt-3 flex items-center gap-2 text-sm">
               <Button variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
                 Previous

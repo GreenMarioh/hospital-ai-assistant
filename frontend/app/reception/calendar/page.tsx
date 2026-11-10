@@ -65,7 +65,7 @@ export default function ReceptionCalendar() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Calendar &amp; booking</h1>
+      <h1 className="page-title">Calendar &amp; booking</h1>
       <Card>
         <Select
           label="Doctor"
@@ -101,7 +101,7 @@ export default function ReceptionCalendar() {
             )}
             {sel && (
               <div
-                className="mt-3 rounded border border-slate-300 p-3 text-sm"
+                className="mt-3 rounded border border-line p-3 text-sm"
                 role="region"
                 aria-label="Selected appointment"
               >

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Alert, Button, Card, Field } from "@/components/ui";
+import { AuthFrame } from "@/components/AuthFrame";
+import { Alert, Button, Field } from "@/components/ui";
 import { api, unwrap } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
@@ -10,9 +11,10 @@ export default function ForgotPasswordPage() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="mb-4 text-2xl font-bold">Reset your password</h1>
-      <Card>
+    <AuthFrame>
+      <h1 className="page-title">Reset your password</h1>
+      <p className="mb-8 mt-2 text-[15px] text-slate-600">We will email you a link to choose a new one.</p>
+      <div>
         {done ? (
           <Alert kind="success">If an account exists for that email, a reset link has been sent.</Alert>
         ) : (
@@ -41,16 +43,15 @@ export default function ForgotPasswordPage() {
             </Button>
           </form>
         )}
-      </Card>
-      <p className="mt-4 text-sm">
-        <Link className="text-blue-800 underline" href="/reset-password">
-          I have a reset token
-        </Link>
-        {" · "}
-        <Link className="text-blue-800 underline" href="/login">
+      </div>
+      <p className="mt-6 flex justify-between border-t border-line pt-6 text-sm">
+        <Link className="link" href="/login">
           Back to sign in
         </Link>
+        <Link className="link" href="/reset-password">
+          I have a reset token
+        </Link>
       </p>
-    </main>
+    </AuthFrame>
   );
 }

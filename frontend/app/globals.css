@@ -1,3 +1,58 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-paper font-sans text-navy-950;
+    font-feature-settings: "tnum" 0;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply text-navy-900;
+  }
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+  thead th {
+    @apply text-xs font-medium text-slate-600;
+  }
+  ::selection {
+    @apply bg-marigold-300 text-navy-950;
+  }
+  input[type="date"] {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Page titles: the one place the serif speaks. */
+  .page-title {
+    @apply font-serif text-[2rem] font-semibold leading-tight tracking-[-0.01em] text-navy-900;
+  }
+  .link {
+    @apply font-medium text-navy-700 underline decoration-navy-300 decoration-1 underline-offset-[3px] hover:text-navy-900 hover:decoration-navy-700;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .data-table th {
+    @apply border-b border-line pb-2 text-left text-xs font-medium text-slate-600;
+  }
+  .data-table td {
+    @apply border-b border-line py-2.5 align-middle;
+  }
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

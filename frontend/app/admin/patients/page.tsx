@@ -65,7 +65,7 @@ export default function AdminPatientsPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Patients &amp; Data Privacy</h1>
+        <h1 className="page-title">Patients &amp; Data Privacy</h1>
       </div>
 
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
@@ -133,7 +133,7 @@ export default function AdminPatientsPage() {
                       <td className="py-2.5 font-medium">
                         <Link
                           href={`/admin/patients/${p.id}`}
-                          className="text-blue-800 underline hover:text-blue-900"
+                          className="link"
                         >
                           {p.first_name} {p.last_name}
                         </Link>
@@ -153,6 +153,7 @@ export default function AdminPatientsPage() {
                         <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
                           <Button
                             variant="secondary"
+                            size="sm"
                             disabled={isBusy}
                             onClick={() => handleExport(p)}
                             aria-label={`Export data for ${p.first_name} ${p.last_name}`}
@@ -180,7 +181,8 @@ export default function AdminPatientsPage() {
                             </div>
                           ) : (
                             <Button
-                              variant="danger"
+                              variant="dangerQuiet"
+                              size="sm"
                               disabled={isBusy}
                               onClick={() => setConfirmDeleteId(p.id)}
                               aria-label={`Request deletion for ${p.first_name} ${p.last_name}`}

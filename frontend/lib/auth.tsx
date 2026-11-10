@@ -96,9 +96,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       reloadMe: loadMe,
       logout: async () => {
         const refresh = getRefreshToken();
-        if (refresh) await api.POST("/api/auth/logout", { body: { refresh_token: refresh } });
-        clearTokens();
-        setUser(null);
+        try {
+          if (refresh) await api.POST("/api/auth/logout", { body: { refresh_token: refresh } });
+        } catch {
+          // Server unreachable: still end the session in this browser.
+        } finally {
+          clearTokens();
+          setUser(null);
+        }
       },
     }),
     [user, loading, loadMe],

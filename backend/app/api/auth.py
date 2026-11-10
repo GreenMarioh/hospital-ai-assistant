@@ -186,13 +186,15 @@ async def refresh(
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     request: Request,
-    response: Response,
     body: RefreshRequest = RefreshRequest(),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     token = body.refresh_token or request.cookies.get("refresh_token")
     if token:
         await svc.revoke_refresh(db, token)
+    # Return a new response: FastAPI's injected `Response` has status_code=None, which crashes
+    # uvicorn when returned directly (and writes a NULL status to the audit log).
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.delete_cookie("refresh_token", path="/api/auth")
     return response
 

@@ -11,7 +11,7 @@ function Waitlist({ doctorId }: { doctorId: string }) {
   const [date, setDate] = useState(addDays(todayLocal(), 1));
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   return (
-    <div className="mt-4 rounded border border-slate-300 p-3" role="group" aria-label="Join waitlist">
+    <div className="mt-5 rounded-md bg-paper p-4" role="group" aria-label="Join waitlist">
       <p className="text-sm font-medium">Preferred day is full? Join the waitlist.</p>
       <p className="text-xs text-slate-600">We will email or text you if a slot opens on that day.</p>
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
@@ -121,7 +121,7 @@ function ManualBooking() {
         </Select>
       </div>
       <div className="mt-3">
-        <label htmlFor="reason" className="block text-sm font-medium">
+        <label htmlFor="reason" className="block text-[13px] font-medium text-navy-900">
           Reason for visit (optional)
         </label>
         <input
@@ -129,7 +129,7 @@ function ManualBooking() {
           maxLength={1000}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="mt-1 w-full rounded border border-slate-500 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          className="mt-1.5 w-full rounded-[5px] border border-slate-400 bg-white px-3 py-2 text-sm hover:border-navy-400 focus:border-navy-700 focus:outline-none focus:ring-2 focus:ring-navy-100"
         />
       </div>
       {msg && (
@@ -148,8 +148,8 @@ function ManualBooking() {
           <Empty>No free slots in the next two weeks.</Empty>
         ) : (
           [...byDay.entries()].slice(0, 7).map(([day, list]) => (
-            <div key={day} className="mb-3">
-              <h3 className="text-sm font-semibold">{weekdayLabel(day)}</h3>
+            <div key={day} className="mb-4">
+              <h3 className="text-[13px] font-semibold text-navy-900">{weekdayLabel(day)}</h3>
               <div className="mt-1 flex flex-wrap gap-2">
                 {list.slice(0, 16).map((s) => (
                   <Button
@@ -223,7 +223,7 @@ function BookingAssistant() {
         <ChatLog messages={msgs} busy={busy} />
         {proposal && (
           <div
-            className="rounded border-2 border-blue-700 bg-blue-50 p-3 text-sm"
+            className="rounded-md border border-navy-700 bg-navy-50 p-4 text-sm"
             role="group"
             aria-label="Confirm booking"
           >
@@ -257,7 +257,7 @@ export default function BookPage() {
   }, []);
   return (
     <>
-      <h1 className="text-2xl font-bold">Book an appointment</h1>
+      <h1 className="page-title">Book an appointment</h1>
       <ManualBooking />
       <BookingAssistant />
     </>

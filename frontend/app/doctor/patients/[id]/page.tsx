@@ -125,7 +125,7 @@ function VisitVersions({ visitId }: { visitId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-1 text-xs font-medium text-blue-700 underline hover:text-blue-900"
+        className="mt-1 text-xs link"
       >
         View version history
       </button>
@@ -133,7 +133,7 @@ function VisitVersions({ visitId }: { visitId: string }) {
   }
 
   return (
-    <div className="mt-2 rounded border border-slate-300 bg-slate-50 p-3 text-xs space-y-2">
+    <div className="mt-2 rounded border border-line bg-paper p-3 text-xs space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-slate-700">Audit Version History</span>
         <button
@@ -253,7 +253,7 @@ function VisitForm({ patientId, done }: { patientId: string; done: () => void })
         {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
         <Field label="Chief complaint" value={f.chief_complaint} onChange={set("chief_complaint")} />
         <div>
-          <label htmlFor="notes" className="block text-sm font-medium">
+          <label htmlFor="notes" className="block text-[13px] font-medium text-navy-900">
             Notes
           </label>
           <textarea
@@ -261,7 +261,7 @@ function VisitForm({ patientId, done }: { patientId: string; done: () => void })
             rows={4}
             value={f.notes}
             onChange={set("notes")}
-            className="mt-1 w-full rounded border border-slate-500 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="mt-1.5 w-full rounded-[5px] border border-slate-400 bg-white px-3 py-2 text-sm hover:border-navy-400 focus:border-navy-700 focus:outline-none focus:ring-2 focus:ring-navy-100"
           />
         </div>
         <Field label="Diagnosis (clinician-entered)" value={f.diagnosis} onChange={set("diagnosis")} />
@@ -306,7 +306,7 @@ export default function DoctorChart() {
   const { p, visits, timeline } = data.data;
   return (
     <>
-      <h1 className="text-2xl font-bold">
+      <h1 className="page-title">
         {p.first_name} {p.last_name}
       </h1>
       <p className="text-sm text-slate-700">

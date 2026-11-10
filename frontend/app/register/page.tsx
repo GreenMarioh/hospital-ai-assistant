@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Alert, Button, Card, Field } from "@/components/ui";
+import { AuthFrame } from "@/components/AuthFrame";
+import { Alert, Button, Field } from "@/components/ui";
 import { HOME } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -38,9 +39,12 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="mb-4 text-2xl font-bold">Create patient account</h1>
-      <Card>
+    <AuthFrame>
+      <h1 className="page-title">Create patient account</h1>
+      <p className="mb-8 mt-2 text-[15px] text-slate-600">
+        For patients. Staff accounts are set up by the hospital administrator.
+      </p>
+      <div>
         <form onSubmit={submit} className="space-y-4">
           {error && <Alert kind="error">{error}</Alert>}
           <div className="grid grid-cols-2 gap-3">
@@ -96,13 +100,13 @@ export default function RegisterPage() {
             {busy ? "Creating…" : "Create account"}
           </Button>
         </form>
-      </Card>
-      <p className="mt-4 text-sm">
+      </div>
+      <p className="mt-6 border-t border-line pt-6 text-sm text-slate-700">
         Already registered?{" "}
-        <Link className="text-blue-800 underline" href="/login">
+        <Link className="link" href="/login">
           Sign in
         </Link>
       </p>
-    </main>
+    </AuthFrame>
   );
 }

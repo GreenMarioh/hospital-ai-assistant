@@ -45,7 +45,7 @@ export default function AuditLogs() {
   const pages = logs.data ? Math.max(1, Math.ceil(logs.data.total / logs.data.size)) : 1;
   return (
     <>
-      <h1 className="text-2xl font-bold">Audit logs</h1>
+      <h1 className="page-title">Audit logs</h1>
       <Card>
         <form
           className="grid gap-3 md:grid-cols-5"

@@ -48,7 +48,7 @@ function SlotConfig({
         }}
       >
         <div>
-          <label htmlFor="slot-minutes" className="block text-sm font-medium">
+          <label htmlFor="slot-minutes" className="block text-[13px] font-medium text-navy-900">
             Slot duration
           </label>
           <select
@@ -114,7 +114,7 @@ export default function AvailabilityPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Availability &amp; leave</h1>
+      <h1 className="page-title">Availability &amp; leave</h1>
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
 
       <SlotConfig
@@ -141,7 +141,7 @@ export default function AvailabilityPage() {
             {windows.map((w, i) => (
               <li key={i} className="flex flex-wrap items-end gap-2">
                 <div>
-                  <label htmlFor={`day-${i}`} className="block text-sm font-medium">
+                  <label htmlFor={`day-${i}`} className="block text-[13px] font-medium text-navy-900">
                     Day
                   </label>
                   <select
@@ -246,7 +246,9 @@ export default function AvailabilityPage() {
             value={leave.reason}
             onChange={(e) => setLeave({ ...leave, reason: e.target.value })}
           />
-          <Button type="submit">Add leave</Button>
+          <Button type="submit" className="self-end">
+            Add leave
+          </Button>
         </form>
         {(exc.data ?? []).length === 0 ? (
           <Empty>No leave scheduled.</Empty>

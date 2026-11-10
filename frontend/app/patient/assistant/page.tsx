@@ -55,7 +55,7 @@ function TriagePanel() {
         )}
         <ChatLog messages={msgs} busy={busy} />
         {last?.result && (
-          <div className="rounded border border-slate-300 p-3 text-sm" aria-label="Triage result">
+          <div className="rounded-md border border-navy-200 bg-navy-50/60 p-4 text-sm" aria-label="Triage result">
             <p>
               Urgency:{" "}
               <Badge
@@ -73,7 +73,7 @@ function TriagePanel() {
             </p>
             <p className="mt-1 text-slate-700">{last.result.rationale}</p>
             {!last.emergency && (
-              <Link className="mt-2 inline-block font-medium text-blue-800 underline" href="/patient/book">
+              <Link className="link mt-3 inline-block" href="/patient/book">
                 Book an appointment
               </Link>
             )}
@@ -129,7 +129,7 @@ function FaqPanel() {
       )}
       {out && (
         <div className="mt-3 space-y-2 text-sm" aria-live="polite">
-          <p className="whitespace-pre-wrap rounded border border-slate-300 bg-white p-3">{out.answer}</p>
+          <p className="whitespace-pre-wrap rounded-md border-l-[3px] border-navy-700 bg-paper px-4 py-3 leading-relaxed">{out.answer}</p>
           {out.sources.length > 0 && (
             <p className="text-xs text-slate-600">Source: {out.sources.map((s) => s.title).join(", ")}</p>
           )}
@@ -142,9 +142,11 @@ function FaqPanel() {
 export default function AssistantPage() {
   return (
     <>
-      <h1 className="text-2xl font-bold">Symptom check &amp; FAQ</h1>
-      <TriagePanel />
-      <FaqPanel />
+      <h1 className="page-title">Symptom check &amp; FAQ</h1>
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <TriagePanel />
+        <FaqPanel />
+      </div>
     </>
   );
 }

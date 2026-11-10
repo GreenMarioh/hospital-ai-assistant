@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Alert, Button, Card, Field } from "@/components/ui";
+import { AuthFrame } from "@/components/AuthFrame";
+import { Alert, Button, Field } from "@/components/ui";
 import { HOME, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -49,11 +50,12 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="mb-4 text-2xl font-bold">
-        {mfaTicket ? "Two-factor authentication" : "Sign in"}
-      </h1>
-      <Card>
+    <AuthFrame>
+      <h1 className="page-title">{mfaTicket ? "Two-factor authentication" : "Sign in"}</h1>
+      <p className="mb-8 mt-2 text-[15px] text-slate-600">
+        {mfaTicket ? "One more step to reach your account." : "Use the email and password for your account."}
+      </p>
+      <div>
         <form onSubmit={submit} className="space-y-4">
           {error && <Alert kind="error">{error}</Alert>}
           {mfaTicket ? (
@@ -78,7 +80,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={resetToPassword}
-                className="w-full text-center text-sm text-blue-800 underline mt-2"
+                className="link mt-2 w-full text-center text-sm"
               >
                 Back to password sign-in
               </button>
@@ -107,23 +109,22 @@ export default function LoginPage() {
             </>
           )}
         </form>
-      </Card>
+      </div>
       {!mfaTicket && (
-        <p className="mt-4 text-sm">
-          New patient?{" "}
-          <Link className="text-blue-800 underline" href="/register">
-            Create an account
-          </Link>
-          {" · "}
-          <Link className="text-blue-800 underline" href="/forgot-password">
-            Forgot password?
-          </Link>
-        </p>
+        <div className="mt-5 space-y-6 text-sm">
+          <p className="text-right">
+            <Link className="link" href="/forgot-password">
+              Forgot password?
+            </Link>
+          </p>
+          <p className="border-t border-line pt-6 text-slate-700">
+            New patient?{" "}
+            <Link className="link" href="/register">
+              Create an account
+            </Link>
+          </p>
+        </div>
       )}
-      <p className="mt-6 text-xs text-slate-600">
-        If you are having a medical emergency, call your local emergency number. This portal is not for
-        emergencies.
-      </p>
-    </main>
+    </AuthFrame>
   );
 }

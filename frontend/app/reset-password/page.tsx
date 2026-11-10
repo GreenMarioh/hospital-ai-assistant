@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Alert, Button, Card, Field } from "@/components/ui";
+import { AuthFrame } from "@/components/AuthFrame";
+import { Alert, Button, Field } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
 
 export default function ResetPasswordPage() {
@@ -10,13 +11,14 @@ export default function ResetPasswordPage() {
   const [pw, setPw] = useState("");
   const [state, setState] = useState<"idle" | "done" | string>("idle");
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="mb-4 text-2xl font-bold">Choose a new password</h1>
-      <Card>
+    <AuthFrame>
+      <h1 className="page-title">Choose a new password</h1>
+      <p className="mb-8 mt-2 text-[15px] text-slate-600">Paste the token from your reset email.</p>
+      <div>
         {state === "done" ? (
           <Alert kind="success">
             Password updated.{" "}
-            <Link className="underline" href="/login">
+            <Link className="font-medium underline" href="/login">
               Sign in
             </Link>
           </Alert>
@@ -46,7 +48,7 @@ export default function ResetPasswordPage() {
             </Button>
           </form>
         )}
-      </Card>
-    </main>
+      </div>
+    </AuthFrame>
   );
 }

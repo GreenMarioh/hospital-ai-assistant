@@ -9,19 +9,29 @@ export function cx(...c: (string | false | null | undefined)[]) {
 
 export function Button({
   variant = "primary",
+  size = "md",
   className,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" }) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "danger" | "dangerQuiet";
+  size?: "md" | "sm";
+}) {
   const styles = {
-    primary: "bg-blue-700 text-white hover:bg-blue-800 disabled:bg-blue-300",
-    secondary: "bg-white text-slate-800 border border-slate-400 hover:bg-slate-100 disabled:text-slate-400",
-    danger: "bg-red-700 text-white hover:bg-red-800 disabled:bg-red-300",
+    primary:
+      "bg-navy-800 text-white hover:bg-navy-900 active:bg-navy-950 disabled:bg-navy-200 disabled:text-navy-600",
+    secondary:
+      "bg-white text-navy-800 border border-navy-200 hover:border-navy-400 hover:bg-navy-50 disabled:border-line disabled:text-slate-500 disabled:hover:bg-white",
+    danger: "bg-red-700 text-white hover:bg-red-800 disabled:bg-red-200 disabled:text-red-800",
+    /* Starts a destructive flow that asks for confirmation; the confirm step uses "danger". */
+    dangerQuiet:
+      "bg-white text-red-700 border border-red-200 hover:border-red-400 hover:bg-red-50 disabled:text-red-300",
   }[variant];
   return (
     <button
       {...props}
       className={cx(
-        "rounded px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-1.5 rounded-[5px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-navy-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed",
+        size === "sm" ? "px-2.5 py-1.5 text-[13px]" : "px-3.5 py-2 text-sm",
         styles,
         className,
       )}
@@ -39,7 +49,7 @@ export function Field({
   const id = useId();
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-800">
+      <label htmlFor={id} className="block text-[13px] font-medium text-navy-900">
         {label}
       </label>
       <input
@@ -47,15 +57,15 @@ export function Field({
         {...props}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-err` : hint ? `${id}-hint` : undefined}
-        className="mt-1 w-full rounded border border-slate-500 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        className="mt-1.5 w-full rounded-[5px] border border-slate-400 bg-white px-3 py-2 text-sm text-navy-950 placeholder:text-slate-500 hover:border-navy-400 focus:border-navy-700 focus:outline-none focus:ring-2 focus:ring-navy-100 aria-[invalid]:border-red-700"
       />
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-slate-600">
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-slate-600">
           {hint}
         </p>
       )}
       {error && (
-        <p id={`${id}-err`} className="mt-1 text-xs text-red-700">
+        <p id={`${id}-err`} className="mt-1.5 text-xs font-medium text-red-700">
           {error}
         </p>
       )}
@@ -72,13 +82,13 @@ export function Select({
   const id = useId();
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-800">
+      <label htmlFor={id} className="block text-[13px] font-medium text-navy-900">
         {label}
       </label>
       <select
         id={id}
         {...props}
-        className="mt-1 w-full rounded border border-slate-500 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+        className="mt-1.5 w-full rounded-[5px] border border-slate-400 bg-white px-3 py-2 text-sm text-navy-950 hover:border-navy-400 focus:border-navy-700 focus:outline-none focus:ring-2 focus:ring-navy-100"
       >
         {children}
       </select>
@@ -98,10 +108,10 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={cx("rounded-lg border border-slate-300 bg-white p-4 shadow-sm", className)}>
+    <section className={cx("rounded-lg border border-line bg-white p-5 md:p-6", className)}>
       {(title || actions) && (
-        <div className="mb-3 flex items-center justify-between gap-2">
-          {title && <h2 className="text-base font-semibold text-slate-900">{title}</h2>}
+        <div className="mb-4 flex items-center justify-between gap-2">
+          {title && <h2 className="text-[17px] font-semibold tracking-[-0.005em] text-navy-900">{title}</h2>}
           {actions}
         </div>
       )}
@@ -118,16 +128,16 @@ export function Alert({
   children: React.ReactNode;
 }) {
   const styles = {
-    info: "border-blue-300 bg-blue-50 text-blue-900",
-    error: "border-red-300 bg-red-50 text-red-900",
-    success: "border-green-300 bg-green-50 text-green-900",
-    warning: "border-amber-400 bg-amber-50 text-amber-900",
-    emergency: "border-red-700 bg-red-700 text-white font-semibold",
+    info: "border-navy-600 bg-navy-50 text-navy-900",
+    error: "border-red-700 bg-red-50 text-red-900",
+    success: "border-emerald-700 bg-emerald-50 text-emerald-900",
+    warning: "border-marigold-600 bg-marigold-100 text-[#5C3D06]",
+    emergency: "border-red-950 bg-red-700 text-white font-semibold text-[15px] py-3",
   }[kind];
   return (
     <div
       role={kind === "error" || kind === "emergency" ? "alert" : "status"}
-      className={cx("rounded border px-3 py-2 text-sm", styles)}
+      className={cx("rounded-[5px] border-l-4 px-4 py-2.5 text-sm leading-relaxed", styles)}
     >
       {children}
     </div>
@@ -136,15 +146,19 @@ export function Alert({
 
 export function Spinner({ label = "Loading" }: { label?: string }) {
   return (
-    <div role="status" aria-live="polite" className="flex items-center gap-2 py-6 text-sm text-slate-700">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+    <div role="status" aria-live="polite" className="flex items-center gap-2.5 py-6 text-sm text-slate-600">
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-700" />
       {label}…
     </div>
   );
 }
 
 export function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="py-6 text-center text-sm text-slate-600">{children}</p>;
+  return (
+    <p className="rounded-md border border-dashed border-navy-200 px-4 py-8 text-center text-sm text-slate-600">
+      {children}
+    </p>
+  );
 }
 
 export function ErrorState({ error, retry }: { error: unknown; retry?: () => void }) {
@@ -162,18 +176,26 @@ export function ErrorState({ error, retry }: { error: unknown; retry?: () => voi
 
 export function Badge({ children, tone = "slate" }: { children: React.ReactNode; tone?: string }) {
   const tones: Record<string, string> = {
-    slate: "bg-slate-200 text-slate-900",
-    green: "bg-green-100 text-green-900",
-    red: "bg-red-100 text-red-900",
-    amber: "bg-amber-100 text-amber-900",
-    blue: "bg-blue-100 text-blue-900",
+    slate: "bg-slate-100 text-slate-700 ring-slate-300",
+    green: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+    red: "bg-red-50 text-red-800 ring-red-200",
+    amber: "bg-marigold-100 text-[#5C3D06] ring-marigold-300",
+    blue: "bg-navy-50 text-navy-800 ring-navy-200",
   };
   return (
-    <span className={cx("rounded px-2 py-0.5 text-xs font-medium", tones[tone] ?? tones.slate)}>
+    <span
+      className={cx(
+        "inline-block whitespace-nowrap rounded-full px-2 py-px text-xs font-medium ring-1 ring-inset",
+        tones[tone] ?? tones.slate,
+      )}
+    >
       {children}
     </span>
   );
 }
+
+/** "no_show" reads as "no-show" on screen. */
+export const statusLabel = (s: string) => s.replace(/_/g, "-");
 
 export const statusTone = (s: string) =>
   ({ booked: "blue", completed: "green", cancelled: "slate", no_show: "red" })[s] ?? "slate";
@@ -183,8 +205,9 @@ export const AI_DISCLAIMER =
 
 export function AiDisclaimer() {
   return (
-    <p className="rounded bg-slate-100 px-3 py-2 text-xs text-slate-700">
-      <strong>AI-generated, requires clinician review.</strong> {AI_DISCLAIMER}
+    <p className="rounded-[5px] border border-line bg-paper px-3.5 py-2.5 text-xs leading-relaxed text-slate-700">
+      <strong className="font-semibold text-navy-900">AI-generated, requires clinician review.</strong>{" "}
+      {AI_DISCLAIMER}
     </p>
   );
 }

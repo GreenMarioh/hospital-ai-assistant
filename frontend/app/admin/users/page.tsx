@@ -69,7 +69,7 @@ export default function AdminUsers() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Users</h1>
+      <h1 className="page-title">Users</h1>
       <Card title="Create staff, doctor or admin account">
         <form
           className="grid gap-3 md:grid-cols-3"

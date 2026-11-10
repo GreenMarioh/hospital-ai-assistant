@@ -44,7 +44,7 @@ function RecordSearch() {
             {hits.data?.map((h) => (
               <li key={h.visit_id} className="py-2">
                 <span dangerouslySetInnerHTML={{ __html: escapeHighlight(h.snippet) }} />{" "}
-                <Link className="text-blue-800 underline" href={`/doctor/patients/${h.patient_id}`}>
+                <Link className="link" href={`/doctor/patients/${h.patient_id}`}>
                   Open chart
                 </Link>
               </li>
@@ -65,7 +65,7 @@ export default function DoctorPatients() {
   );
   return (
     <>
-      <h1 className="text-2xl font-bold">My patients</h1>
+      <h1 className="page-title">My patients</h1>
       <Card>
         <form
           className="flex items-end gap-2"
@@ -96,7 +96,7 @@ export default function DoctorPatients() {
                 <span>
                   {p.first_name} {p.last_name} · {p.date_of_birth}
                 </span>
-                <Link className="text-blue-800 underline" href={`/doctor/patients/${p.id}`}>
+                <Link className="link" href={`/doctor/patients/${p.id}`}>
                   Open chart
                   <span className="sr-only">
                     {" "}

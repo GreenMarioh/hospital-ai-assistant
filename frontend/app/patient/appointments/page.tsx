@@ -9,7 +9,7 @@ import {
   Empty,
   ErrorState,
   Spinner,
-  statusTone,
+  statusTone, statusLabel,
   useAsync,
 } from "@/components/ui";
 import { api, errorMessage, unwrap, type Schemas } from "@/lib/api";
@@ -26,7 +26,7 @@ function Reschedule({ appt, done }: { appt: Schemas["AppointmentOut"]; done: () 
     );
   }, [appt.doctor_id]);
   return (
-    <div className="mt-2 rounded border border-slate-300 p-2">
+    <div className="mt-2 rounded border border-line p-2">
       <p className="text-xs font-medium">Pick a new time</p>
       {err && <Alert kind="error">{err}</Alert>}
       {slots.loading ? (
@@ -39,7 +39,7 @@ function Reschedule({ appt, done }: { appt: Schemas["AppointmentOut"]; done: () 
             <Button
               key={s.starts_at}
               variant="secondary"
-              className="!px-2 !py-1 text-xs"
+              size="sm"
               onClick={async () => {
                 const res = await api.POST("/api/appointments/{appt_id}/reschedule", {
                   params: { path: { appt_id: appt.id } },
@@ -99,7 +99,7 @@ export default function MyAppointments() {
   const [resched, setResched] = useState<string | null>(null);
   return (
     <>
-      <h1 className="text-2xl font-bold">My appointments</h1>
+      <h1 className="page-title">My appointments</h1>
       {msg && <Alert kind="error">{msg}</Alert>}
       <Card>
         {appts.loading ? (
@@ -117,7 +117,7 @@ export default function MyAppointments() {
                     {fmtDateTime(a.starts_at)} · {a.doctor_name}
                   </span>
                   <span className="flex items-center gap-2">
-                    <Badge tone={statusTone(a.status)}>{a.status}</Badge>
+                    <Badge tone={statusTone(a.status)}>{statusLabel(a.status)}</Badge>
                     {a.status === "booked" && new Date(a.starts_at) > new Date() && (
                       <>
                         <Button
@@ -127,7 +127,7 @@ export default function MyAppointments() {
                           Reschedule
                         </Button>
                         <Button
-                          variant="danger"
+                          variant="dangerQuiet"
                           onClick={async () => {
                             const res = await api.POST("/api/appointments/{appt_id}/cancel", {
                               params: { path: { appt_id: a.id } },

@@ -23,7 +23,7 @@ export default function ReceptionPatient() {
   const { p, docs, timeline } = data.data;
   return (
     <>
-      <h1 className="text-2xl font-bold">
+      <h1 className="page-title">
         {p.first_name} {p.last_name}
       </h1>
       <Card title="Demographics">
@@ -82,7 +82,7 @@ export default function ReceptionPatient() {
           }}
         >
           <div>
-            <label htmlFor="file" className="block text-sm font-medium">
+            <label htmlFor="file" className="block text-[13px] font-medium text-navy-900">
               File (PDF, PNG or JPEG, max 10 MB)
             </label>
             <input

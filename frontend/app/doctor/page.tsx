@@ -32,7 +32,7 @@ export default function DoctorSchedule() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">My schedule</h1>
+      <h1 className="page-title">My schedule</h1>
       {msg && <Alert kind={msg.kind}>{msg.text}</Alert>}
       <Card>
         {appts.loading ? (
@@ -58,7 +58,7 @@ export default function DoctorSchedule() {
           {sel.reason && <p className="text-sm text-slate-700">Reason: {sel.reason}</p>}
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              className="rounded bg-blue-700 px-3 py-2 text-sm font-medium text-white hover:bg-blue-800"
+              className="inline-flex items-center rounded-[5px] bg-navy-800 px-3.5 py-2 text-sm font-medium text-white hover:bg-navy-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-navy-600 focus-visible:ring-offset-2"
               href={`/doctor/patients/${sel.patient_id}`}
             >
               Open chart &amp; AI briefing

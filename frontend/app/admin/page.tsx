@@ -43,11 +43,21 @@ type Summary = {
   };
 };
 
+/* Chart tokens: validated pair (light surface, CVD-separated); grid and ticks stay recessive. */
+const SERIES_TOTAL = "#3A5BA0";
+const SERIES_NO_SHOW = "#C2410C";
+const GRID = "#DBE1EB";
+const TICK = { fontSize: 12, fill: "#475569" };
+const TOOLTIP = {
+  contentStyle: { borderRadius: 6, border: "1px solid #DBE1EB", fontSize: 13, color: "#0F1F3D" },
+  labelStyle: { fontWeight: 600, marginBottom: 4 },
+};
+
 function Kpi({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-slate-300 bg-white p-4">
-      <p className="text-xs uppercase tracking-wide text-slate-600">{label}</p>
-      <p className="mt-1 text-2xl font-bold">{value}</p>
+    <div className="border-l-2 border-navy-200 py-1 pl-4">
+      <p className="text-[13px] text-slate-600">{label}</p>
+      <p className="num mt-1 font-serif text-[2rem] font-semibold leading-none text-navy-900">{value}</p>
     </div>
   );
 }
@@ -66,7 +76,7 @@ export default function AdminDashboard() {
   const d = s.data;
   return (
     <>
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="page-title">Dashboard</h1>
       <Card>
         <div className="flex flex-wrap items-end gap-3">
           <Field
@@ -105,7 +115,7 @@ export default function AdminDashboard() {
         <ErrorState error={s.error} retry={s.reload} />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6 rounded-lg border border-line bg-white p-5 md:grid-cols-4 md:p-6">
             <Kpi label="Appointments" value={d.appointments.totals.total} />
             <Kpi label="No-show rate" value={`${(d.no_show_rate * 100).toFixed(1)}%`} />
             <Kpi
@@ -121,24 +131,31 @@ export default function AdminDashboard() {
             <div className="h-64" role="img" aria-label="Line chart of appointments per day">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={d.appointments.per_day}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tickFormatter={(v: string) => v.slice(5)} />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Legend />
+                  <CartesianGrid stroke={GRID} vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(v: string) => v.slice(5)}
+                    tick={TICK}
+                    tickLine={false}
+                    axisLine={{ stroke: GRID }}
+                    minTickGap={16}
+                  />
+                  <YAxis allowDecimals={false} tick={TICK} tickLine={false} axisLine={false} width={32} />
+                  <Tooltip {...TOOLTIP} />
+                  <Legend iconType="plainline" wrapperStyle={{ fontSize: 13, color: "#475569" }} />
                   <Line
-                    type="monotone"
+                    type="linear"
                     dataKey="total"
                     name="Total"
-                    stroke="#1d4ed8"
+                    stroke={SERIES_TOTAL}
                     strokeWidth={2}
                     dot={false}
                   />
                   <Line
-                    type="monotone"
+                    type="linear"
                     dataKey="no_show"
                     name="No-show"
-                    stroke="#b91c1c"
+                    stroke={SERIES_NO_SHOW}
                     strokeWidth={2}
                     dot={false}
                   />
@@ -146,8 +163,8 @@ export default function AdminDashboard() {
               </ResponsiveContainer>
             </div>
             <details className="mt-2 text-sm">
-              <summary className="cursor-pointer">View as table</summary>
-              <table className="mt-2 w-full text-left">
+              <summary className="cursor-pointer text-navy-700 hover:text-navy-900">View as table</summary>
+              <table className="data-table mt-3 w-full max-w-md text-left">
                 <thead>
                   <tr>
                     <th scope="col">Date</th>
@@ -173,43 +190,66 @@ export default function AdminDashboard() {
             <Card title="Department load">
               <div className="h-64" role="img" aria-label="Bar chart of appointments by department">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={d.department_load} layout="vertical" margin={{ left: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" allowDecimals={false} />
-                    <YAxis type="category" dataKey="department" width={110} />
-                    <Tooltip />
-                    <Bar dataKey="appointments" name="Appointments" fill="#1d4ed8" />
+                  <BarChart data={d.department_load} layout="vertical" margin={{ left: 8, right: 16 }}>
+                    <CartesianGrid stroke={GRID} horizontal={false} />
+                    <XAxis
+                      type="number"
+                      allowDecimals={false}
+                      tick={TICK}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="department"
+                      width={110}
+                      tick={{ ...TICK, fill: "#16294F" }}
+                      tickLine={false}
+                      axisLine={{ stroke: GRID }}
+                    />
+                    <Tooltip {...TOOLTIP} cursor={{ fill: "#EEF2F8" }} />
+                    <Bar
+                      dataKey="appointments"
+                      name="Appointments"
+                      fill={SERIES_TOTAL}
+                      maxBarSize={24}
+                      radius={[0, 4, 4, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </Card>
             <Card title="AI assistant usage">
-              <dl className="grid grid-cols-2 gap-2 text-sm">
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
                 {Object.entries(d.ai_usage.conversations).map(([k, v]) => (
                   <div key={k}>
-                    <dt className="text-slate-600">{k} conversations</dt>
-                    <dd className="font-semibold">{v}</dd>
+                    <dt className="text-slate-600 first-letter:uppercase">{k} conversations</dt>
+                    <dd className="num mt-0.5 font-semibold text-navy-900">{v}</dd>
                   </div>
                 ))}
                 <div>
                   <dt className="text-slate-600">LLM replies</dt>
-                  <dd className="font-semibold">{d.ai_usage.llm_replies}</dd>
+                  <dd className="num mt-0.5 font-semibold text-navy-900">{d.ai_usage.llm_replies}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-600">Rule-based emergency responses</dt>
-                  <dd className="font-semibold">{d.ai_usage.rule_based_emergency_responses}</dd>
+                  <dd className="num mt-0.5 font-semibold text-navy-900">
+                    {d.ai_usage.rule_based_emergency_responses}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-slate-600">Degraded (AI down) responses</dt>
-                  <dd className="font-semibold">{d.ai_usage.degraded_responses}</dd>
+                  <dd className="num mt-0.5 font-semibold text-navy-900">{d.ai_usage.degraded_responses}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-600">Avg latency</dt>
-                  <dd className="font-semibold">{d.ai_usage.avg_latency_ms ?? "—"} ms</dd>
+                  <dd className="num mt-0.5 font-semibold text-navy-900">
+                    {d.ai_usage.avg_latency_ms ?? "—"} ms
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-slate-600">Tokens in / out</dt>
-                  <dd className="font-semibold">
+                  <dd className="num mt-0.5 font-semibold text-navy-900">
                     {d.ai_usage.input_tokens} / {d.ai_usage.output_tokens}
                   </dd>
                 </div>
@@ -218,7 +258,9 @@ export default function AdminDashboard() {
           </div>
         </>
       )}
-      <p className="text-xs text-slate-600">API: {API_URL}</p>
+      <p className="text-xs text-slate-600">
+        API: <span className="num">{API_URL}</span>
+      </p>
     </>
   );
 }

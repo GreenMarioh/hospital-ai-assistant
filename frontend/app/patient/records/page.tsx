@@ -24,7 +24,7 @@ export default function RecordsPage() {
   const { me, visits, docs, timeline } = data.data;
   return (
     <>
-      <h1 className="text-2xl font-bold">My records</h1>
+      <h1 className="page-title">My records</h1>
       <Card title="Profile">
         <dl className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
           <div>
@@ -80,7 +80,7 @@ export default function RecordsPage() {
                   {d.filename} <Badge>{d.doc_type}</Badge>
                 </span>
                 <button
-                  className="text-blue-800 underline"
+                  className="link"
                   onClick={async () => {
                     const link = unwrap(
                       await api.GET("/api/documents/{doc_id}/link", { params: { path: { doc_id: d.id } } }),
